@@ -1336,3 +1336,6 @@ src/wmi_pager.hpp
 src/wml_exception.cpp
 src/wml_exception.hpp
 src/wml_separators.hpp
+src/SConscript
+src/SConstruct
+SConstruct
