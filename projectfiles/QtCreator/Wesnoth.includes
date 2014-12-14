@@ -1,0 +1,14 @@
+src
+src/lua
+src/nacl
+src/SDL_gpu/SDL_gpu
+src/SDL_gpu/SDL_gpu/externals/glew
+src/SDL_gpu/SDL_gpu/externals/stb_image
+src/SDL_gpu/SDL_gpu/GL_common
+src/SDL_gpu/SDL_gpu/GLES_1
+src/SDL_gpu/SDL_gpu/GLES_2
+src/SDL_gpu/SDL_gpu/OpenGL_1
+src/SDL_gpu/SDL_gpu/OpenGL_1_BASE
+src/SDL_gpu/SDL_gpu/OpenGL_2
+src/SDL_gpu/SDL_gpu/OpenGL_3
+src/SDL_SavePNG
