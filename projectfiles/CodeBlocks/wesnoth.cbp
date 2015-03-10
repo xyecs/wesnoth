@@ -660,6 +660,8 @@
 		<Unit filename="../../src/gui/dialogs/game_save.hpp" />
 		<Unit filename="../../src/gui/dialogs/gamestate_inspector.cpp" />
 		<Unit filename="../../src/gui/dialogs/gamestate_inspector.hpp" />
+		<Unit filename="../../src/gui/dialogs/help_browser.cpp" />
+		<Unit filename="../../src/gui/dialogs/help_browser.hpp" />
 		<Unit filename="../../src/gui/dialogs/helper.hpp" />
 		<Unit filename="../../src/gui/dialogs/language_selection.cpp" />
 		<Unit filename="../../src/gui/dialogs/language_selection.hpp" />
