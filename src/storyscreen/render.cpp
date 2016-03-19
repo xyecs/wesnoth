@@ -959,7 +959,6 @@ bool part_ui::handle_interface()
 	events::pump();
 	events::raise_process_event();
 	events::raise_draw_event();
-	video_.flip();
 
 	return result;
 }
