@@ -52,7 +52,11 @@ public:
  * @note When adding a new entry to the enum also add a unit test.
  */
 enum tevent {
+	PRE_DRAW /** Precedes a DRAW-event. */
+	,
 	DRAW /**< Periodic redraw request. */
+	,
+	POST_DRAW /** Follows a DRAW-event. */
 	,
 	CLOSE_WINDOW /**< A request to close the current window. */
 	,

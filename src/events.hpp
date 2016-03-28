@@ -27,6 +27,8 @@
 #define CLOSE_WINDOW_EVENT (SDL_USEREVENT + 4)
 #define SHOW_HELPTIP_EVENT (SDL_USEREVENT + 5)
 #define DRAW_ALL_EVENT (SDL_USEREVENT + 6)
+#define PRE_DRAW_EVENT (SDL_USEREVENT + 7)
+#define POST_DRAW_EVENT (SDL_USEREVENT + 8)
 
 namespace events
 {
@@ -44,7 +46,9 @@ public:
 	virtual void handle_event(const SDL_Event& event) = 0;
 	virtual void handle_window_event(const SDL_Event& event) = 0;
 	virtual void process_event() {}
+	virtual void pre_draw() {}
 	virtual void draw() {}
+	virtual void post_draw() {}
 
 	virtual void volatile_draw() {}
 	virtual void volatile_undraw() {}
@@ -103,8 +107,7 @@ struct pump_info {
 	pump_info() : resize_dimensions(), ticks_(0) {}
 	std::pair<int,int> resize_dimensions;
 	int ticks(unsigned *refresh_counter=NULL, unsigned refresh_rate=1);
-private:
-	int ticks_; //0 if not calculated
+private:	int ticks_; //0 if not calculated
 };
 
 class pump_monitor {
