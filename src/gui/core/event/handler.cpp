@@ -164,9 +164,15 @@ private:
 
 	/***** Handlers *****/
 
+	/** Fires a pre-draw event. */
+	void handle_pre_draw();
+
 	/** Fires a draw event. */
 	using events::sdl_handler::draw;
 	void draw(const bool force);
+
+	/** Fires a post-draw event. */
+	void handle_post_draw();
 
 	/**
 	 * Fires a video resize event.
@@ -354,7 +360,7 @@ void thandler::handle_event(const SDL_Event& event)
 			// remove_popup();
 			break;
 		case PRE_DRAW_EVENT:
-			pre_draw();
+			handle_pre_draw();
 			break;
 		case DRAW_EVENT:
 			draw(false);
@@ -363,7 +369,7 @@ void thandler::handle_event(const SDL_Event& event)
 			draw(true);
 			break;
 		case POST_DRAW_EVENT:
-			post_draw();
+			handle_post_draw();
 			break;
 		case TIMER_EVENT:
 			execute_timer(reinterpret_cast<size_t>(event.user.data1));
@@ -501,6 +507,18 @@ void thandler::activate()
 	}
 }
 
+void thandler::handle_pre_draw()
+{
+	// Don't display this event since it floods the screen
+	// DBG_GUI_E << "Firing " << PRE_DRAW << ".\n";
+
+	FOREACH(AUTO dispatcher, dispatchers_)
+	{
+
+		dispatcher->fire(PRE_DRAW, dynamic_cast<twidget&>(*dispatcher));
+	}
+}
+
 void thandler::draw(const bool force)
 {
 	// Don't display this event since it floods the screen
@@ -537,6 +555,18 @@ void thandler::draw(const bool force)
 
 	if(!dispatchers_.empty()) {
 		//CVideo& video = dynamic_cast<twindow&>(*dispatchers_.back()).video();
+	}
+}
+
+void thandler::handle_post_draw()
+{
+	// Don't display this event since it floods the screen
+	// DBG_GUI_E << "Firing " << POST_DRAW << ".\n";
+
+	FOREACH(AUTO dispatcher, dispatchers_)
+	{
+
+		dispatcher->fire(POST_DRAW, dynamic_cast<twidget&>(*dispatcher));
 	}
 }
 
