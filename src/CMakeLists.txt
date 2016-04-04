@@ -779,6 +779,7 @@ set(wesnoth-main_SRC
 	formula/string_utils.cpp
 	formula/tokenizer.cpp
 	formula/variant.cpp
+	fpscounter.cpp
 	game_board.cpp
 	game_classification.cpp
 	game_config_manager.cpp

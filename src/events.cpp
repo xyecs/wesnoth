@@ -316,7 +316,8 @@ SDL_Event last_resize_event;
 bool last_resize_event_used = true;
 
 static bool remove_on_resize(const SDL_Event &a) {
-	if (a.type == DRAW_EVENT || a.type == DRAW_ALL_EVENT) {
+	if (a.type == PRE_DRAW_EVENT || a.type == DRAW_EVENT ||
+			a.type == POST_DRAW_EVENT || a.type == DRAW_ALL_EVENT) {
 		return true;
 	}
 	if (a.type == SHOW_HELPTIP_EVENT) {
@@ -357,15 +358,28 @@ static Uint32 draw_timer(Uint32, void*)
 	SDL_Event event;
 	SDL_UserEvent data;
 
-	data.type = DRAW_EVENT;
+	data.type = PRE_DRAW_EVENT;
 	data.code = 0;
 	data.data1 = NULL;
 	data.data2 = NULL;
 
-	event.type = DRAW_EVENT;
+	event.type = PRE_DRAW_EVENT;
 	event.user = data;
 
+	SDL_FlushEvent(DRAW_EVENT);
+	SDL_FlushEvent(PRE_DRAW_EVENT);
+	SDL_FlushEvent(POST_DRAW_EVENT);
+
 	SDL_PushEvent(&event);
+
+	data.type = DRAW_EVENT;
+	event.type = DRAW_EVENT;
+	SDL_PushEvent(&event);
+
+	data.type = POST_DRAW_EVENT;
+	event.type = POST_DRAW_EVENT;
+	SDL_PushEvent(&event);
+
 	return draw_interval;
 }
 

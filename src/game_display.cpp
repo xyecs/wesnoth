@@ -250,6 +250,7 @@ void game_display::scroll_to_leader(int side, SCROLL_TYPE scroll_type,bool force
 }
 
 void game_display::pre_draw() {
+	display::pre_draw();
 	if (boost::shared_ptr<wb::manager> w = wb_.lock()) {
 		w->pre_draw();
 	}
@@ -263,6 +264,7 @@ void game_display::pre_draw() {
 
 
 void game_display::post_draw() {
+	display::pre_draw();
 	if (boost::shared_ptr<wb::manager> w = wb_.lock()) {
 		w->post_draw();
 	}

@@ -72,6 +72,8 @@ namespace wb {
 #include <list>
 #include <map>
 
+#include "fpscounter.hpp"
+
 class gamemap;
 
 class display : public filter_context, public video2::draw_layering
@@ -595,6 +597,14 @@ public:
 	/** Checks if location @a loc or one of the adjacent tiles is visible on screen. */
 	bool tile_nearly_on_screen(const map_location &loc) const;
 
+	virtual void pre_draw();
+
+	virtual void draw();
+
+	virtual void post_draw();
+
+	void draw(bool update);
+
 	/**
 	 * Draws invalidated items.
 	 * If update is true, will also copy the display to the frame buffer.
@@ -602,10 +612,6 @@ public:
 	 * Not virtual, since it gathers common actions. Calls various protected
 	 * virtuals (further below) to allow specialized behavior in derived classes.
 	 */
-	virtual void draw();
-
-	void draw(bool update);
-
 	void draw(bool update, bool force);
 
 	map_labels& labels();
@@ -775,6 +781,8 @@ protected:
 	boost::scoped_ptr<map_labels> map_labels_;
 	reports * reports_object_;
 
+	fps_counter fps_;
+
 	/** Event raised when the map is being scrolled */
 	mutable events::generic_event scroll_event_;
 
@@ -835,6 +843,9 @@ private:
 	// This surface must be freed by the caller
 	surface get_flag(const map_location& loc);
 #endif
+
+	void clear_fps_label();
+	void make_fps_label();
 
 	/** Animated flags for each team */
 	std::vector<animated<image::locator> > flags_;

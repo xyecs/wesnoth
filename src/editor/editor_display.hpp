@@ -41,7 +41,7 @@ public:
 	void set_palette_report(const config& palette_report) {palette_report_ = palette_report;}
 
 protected:
-	void pre_draw();
+
 	/**
 	* The editor uses different rules for terrain highlighting (e.g. selections)
 	*/

@@ -1402,30 +1402,17 @@ void display::toggle_debug_foreground()
 
 void display::flip()
 {
+
+	video().flip();
+
+}
+
+void display::post_draw() {
 	if(video().faked()) {
-		return;
+			return;
 	}
 
 	surface& frameBuffer = get_video_surface();
-
-	// This is just the debug function "sunset" to progressively darken the map area
-	static size_t sunset_timer = 0;
-	if (sunset_delay && ++sunset_timer > sunset_delay) {
-		sunset_timer = 0;
-		SDL_Rect r = map_outside_area(); // Use frameBuffer to also test the UI
-		const Uint32 color =  SDL_MapRGBA(video().getSurface()->format,0,0,0,SDL_ALPHA_OPAQUE);
-		// Adjust the alpha if you want to balance cpu-cost / smooth sunset
-		sdl::fill_rect_alpha(r, color, 1, frameBuffer);
-		update_rect(r);
-	}
-#ifdef SDL_GPU
-	font::draw_floating_labels(screen_);
-#else
-	font::draw_floating_labels(frameBuffer);
-#endif
-	events::raise_volatile_draw_event();
-
-	video().flip();
 
 	events::raise_volatile_undraw_event();
 #ifdef SDL_GPU
@@ -1433,6 +1420,37 @@ void display::flip()
 #else
 	font::undraw_floating_labels(frameBuffer);
 #endif
+
+}
+
+void display::clear_fps_label()
+{
+	if(fps_handle_ != 0) {
+		font::remove_floating_label(fps_handle_);
+		fps_handle_ = 0;
+	}
+	drawn_hexes_ = 0;
+	invalidated_hexes_ = 0;
+}
+
+void display::make_fps_label()
+{
+	std::ostringstream stream;
+	stream << "fps: " << fps_.get_fps();
+	if (game_config::debug) {
+		stream << "\nhex: " << drawn_hexes_ * 1.0 / fps_.get_sample_freq();
+		if (drawn_hexes_ != invalidated_hexes_)
+			stream << " ("
+					<< (invalidated_hexes_ - drawn_hexes_) * 1.0
+							/ fps_.get_sample_freq() << ")";
+	}
+	clear_fps_label();
+	font::floating_label flabel(stream.str());
+	flabel.set_font_size(12);
+	flabel.set_color(benchmark ? font::BAD_COLOR : font::NORMAL_COLOR);
+	flabel.set_position(10, 100);
+	flabel.set_alignment(font::LEFT_ALIGN);
+	fps_handle_ = font::add_floating_label(flabel);
 }
 
 void display::update_display()
@@ -1442,47 +1460,15 @@ void display::update_display()
 	}
 
 	if(preferences::show_fps() || benchmark) {
-		static int last_sample = SDL_GetTicks();
-		static int frames = 0;
-		++frames;
-		const int sample_freq = 10;
-		if(frames == sample_freq) {
-			const int this_sample = SDL_GetTicks();
-
-			const int fps = (frames*1000)/(this_sample - last_sample);
-			last_sample = this_sample;
-			frames = 0;
-
-			if(fps_handle_ != 0) {
-				font::remove_floating_label(fps_handle_);
-				fps_handle_ = 0;
-			}
-			std::ostringstream stream;
-			stream << "fps: " << fps;
-			if (game_config::debug) {
-				stream << "\nhex: " << drawn_hexes_*1.0/sample_freq;
-				if (drawn_hexes_ != invalidated_hexes_)
-					stream << " (" << (invalidated_hexes_-drawn_hexes_)*1.0/sample_freq << ")";
-			}
-			drawn_hexes_ = 0;
-			invalidated_hexes_ = 0;
-
-			font::floating_label flabel(stream.str());
-			flabel.set_font_size(12);
-			flabel.set_color(benchmark ? font::BAD_COLOR : font::NORMAL_COLOR);
-			flabel.set_position(10, 100);
-			flabel.set_alignment(font::LEFT_ALIGN);
-
-			fps_handle_ = font::add_floating_label(flabel);
+		if(fps_.get_frames_sampled() == 0) {
+			make_fps_label();
 		}
 	} else if(fps_handle_ != 0) {
-		font::remove_floating_label(fps_handle_);
-		fps_handle_ = 0;
-		drawn_hexes_ = 0;
-		invalidated_hexes_ = 0;
+		clear_fps_label();
 	}
 
 	flip();
+
 }
 #ifdef SDL_GPU
 static void draw_panel(surface &target, const theme::panel& panel, std::vector<gui::button>& /*buttons*/)
@@ -1860,9 +1846,10 @@ void display::draw_init()
 
 void display::draw_wrap(bool update, bool force)
 {
-	static const int time_between_draws = preferences::draw_delay();
-	const int current_time = SDL_GetTicks();
-	const int wait_time = nextDraw_ - current_time;
+	//static const int time_between_draws = preferences::draw_delay();
+	//const int current_time = SDL_GetTicks();
+	//const int wait_time = nextDraw_ - current_time;
+	UNUSED(force);
 
 	if(redrawMinimap_) {
 		redrawMinimap_ = false;
@@ -1871,13 +1858,13 @@ void display::draw_wrap(bool update, bool force)
 
 	if(update) {
 		update_display();
-		if(!force && !benchmark && wait_time > 0) {
+		//if(!force && !benchmark && wait_time > 0) {
 			// If it's not time yet to draw, delay until it is
-			SDL_Delay(wait_time);
-		}
+			//SDL_Delay(wait_time);
+		//}
 
 		// Set the theoretical next draw time
-		nextDraw_ += time_between_draws;
+		//nextDraw_ += time_between_draws;
 
 		// If the next draw already should have been finished,
 		// we'll enter an update frenzy, so make sure that the
@@ -2702,6 +2689,17 @@ void display::draw(bool update) {
 	draw(update, false);
 }
 
+void display::pre_draw() {
+	// Trigger cache rebuild when preference gets changed
+	if (animate_water_ != preferences::animate_water()) {
+		animate_water_ = preferences::animate_water();
+		builder_->rebuild_cache_all();
+	}
+
+	set_scontext_unsynced leave_synced_context;
+
+	draw_init();
+}
 
 void display::draw(bool update,bool force) {
 //	log_scope("display::draw");
@@ -2716,16 +2714,9 @@ void display::draw(bool update,bool force) {
 		return;
 	}
 
-	// Trigger cache rebuild when preference gets changed
-	if (animate_water_ != preferences::animate_water()) {
-		animate_water_ = preferences::animate_water();
-		builder_->rebuild_cache_all();
-	}
 
-	set_scontext_unsynced leave_synced_context;
+	surface& frameBuffer = get_video_surface();
 
-	draw_init();
-	pre_draw();
 	// invalidate all that needs to be invalidated
 	invalidate_animations();
 	// at this stage we have everything that needs to be invalidated for this redraw
@@ -2758,7 +2749,26 @@ void display::draw(bool update,bool force) {
 		//SDL_Delay(2*simulate_delay + rand() % 20);
 	}
 	draw_wrap(update, force);
-	post_draw();
+
+	// This is just the debug function "sunset" to progressively darken the map area
+	static size_t sunset_timer = 0;
+	if (sunset_delay && ++sunset_timer > sunset_delay) {
+		sunset_timer = 0;
+		SDL_Rect r = map_outside_area(); // Use frameBuffer to also test the UI
+		const Uint32 color =  SDL_MapRGBA(video().getSurface()->format,0,0,0,SDL_ALPHA_OPAQUE);
+		// Adjust the alpha if you want to balance cpu-cost / smooth sunset
+		sdl::fill_rect_alpha(r, color, 1, frameBuffer);
+		update_rect(r);
+	}
+
+#ifdef SDL_GPU
+	font::draw_floating_labels(screen_);
+#else
+	font::draw_floating_labels(frameBuffer);
+#endif
+	events::raise_volatile_draw_event();
+
+
 }
 
 map_labels& display::labels()
@@ -3782,9 +3792,25 @@ void display::handle_window_event(const SDL_Event& event) {
 }
 
 void display::handle_event(const SDL_Event& event) {
-	if (event.type == DRAW_ALL_EVENT) {
+
+	switch(event.type) {
+	case PRE_DRAW_EVENT:
+		pre_draw();
+		break;
+	case DRAW_EVENT:
 		draw();
+		break;
+	case POST_DRAW_EVENT:
+		post_draw();
+		break;
+	case DRAW_ALL_EVENT:
+		pre_draw();
+		draw();
+		post_draw();
+	default:
+		break;
 	}
+
 }
 
 display *display::singleton_ = NULL;

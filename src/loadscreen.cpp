@@ -273,7 +273,7 @@ void loadscreen::draw_screen(const std::string &text)
 	// Update the rectangle.
 	update_rect(pbx, pby, pbw + 2*(bw + bispw), pbh + 2*(bw + bispw));
 
-	events::pump();
+	//events::pump();
 #endif
 }
 

@@ -360,7 +360,7 @@ void thandler::handle_event(const SDL_Event& event)
 			// remove_popup();
 			break;
 		case PRE_DRAW_EVENT:
-			handle_pre_draw();
+			//handle_pre_draw();
 			break;
 		case DRAW_EVENT:
 			draw(false);
@@ -369,7 +369,7 @@ void thandler::handle_event(const SDL_Event& event)
 			draw(true);
 			break;
 		case POST_DRAW_EVENT:
-			handle_post_draw();
+			//handle_post_draw();
 			break;
 		case TIMER_EVENT:
 			execute_timer(reinterpret_cast<size_t>(event.user.data1));
@@ -514,7 +514,6 @@ void thandler::handle_pre_draw()
 
 	FOREACH(AUTO dispatcher, dispatchers_)
 	{
-
 		dispatcher->fire(PRE_DRAW, dynamic_cast<twidget&>(*dispatcher));
 	}
 }

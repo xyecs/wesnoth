@@ -93,10 +93,6 @@ void editor_display::rebuild_terrain(const map_location &loc) {
 	builder_->rebuild_terrain(loc);
 }
 
-void editor_display::pre_draw()
-{
-}
-
 image::TYPE editor_display::get_image_type(const map_location& loc)
 {
 	if (map().in_selection(loc)) {
