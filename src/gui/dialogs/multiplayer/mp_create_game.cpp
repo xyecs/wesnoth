@@ -32,10 +32,9 @@
 #include "gui/widgets/minimap.hpp"
 #include "gui/widgets/settings.hpp"
 #include "settings.hpp"
-#include "utils/foreach.hpp"
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 #endif
 
 namespace gui2
@@ -45,7 +44,7 @@ REGISTER_DIALOG(mp_create_game)
 
 tmp_create_game::tmp_create_game(const config& cfg)
 	: cfg_(cfg)
-	, scenario_(NULL)
+	, scenario_(nullptr)
 	, use_map_settings_(register_bool(
 			  "use_map_settings",
 			  true,
@@ -101,10 +100,10 @@ void tmp_create_game::pre_show(twindow& window)
 	// User maps
 	/*	FIXME implement user maps
 		std::vector<std::string> maps;
-		filesystem::get_files_in_dir(filesystem::get_user_data_dir() + "/editor/maps", &maps, NULL,
+		filesystem::get_files_in_dir(filesystem::get_user_data_dir() + "/editor/maps", &maps, nullptr,
 	   filesystem::FILE_NAME_ONLY);
 
-		FOREACH(const AUTO& map, maps) {
+		for(const auto& map : maps) {
 			std::map<std::string, t_string> item;
 			item.insert(std::make_pair("label", map));
 			list->add_row(item);
@@ -113,7 +112,7 @@ void tmp_create_game::pre_show(twindow& window)
 
 	// Standard maps
 	int i = 0;
-	FOREACH(const AUTO & map, cfg_.child_range("multiplayer"))
+	for(const auto & map : cfg_.child_range("multiplayer"))
 	{
 		if(map["allow_new_game"].to_bool(true)) {
 			string_map item;
@@ -153,7 +152,7 @@ void tmp_create_game::update_map(twindow& window)
 		minimap.set_map_data((*scenario_)["map_data"]);
 	} else {
 		minimap.set_map_data("");
-		scenario_ = NULL;
+		scenario_ = nullptr;
 	}
 
 	update_map_settings(window);

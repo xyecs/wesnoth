@@ -26,8 +26,6 @@
 #include "scripting/plugins/context.hpp"
 #include "soundsource.hpp"
 
-#include <boost/foreach.hpp>
-
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
 
@@ -37,6 +35,10 @@ controller_base::controller_base(
 	, game_config_(game_config)
 	, key_()
 	, scrolling_(false)
+	, scroll_up_(false)
+	, scroll_down_(false)
+	, scroll_left_(false)
+	, scroll_right_(false)
 	, joystick_manager_()
 {
 }
@@ -64,13 +66,14 @@ void controller_base::handle_event(const SDL_Event& event)
 
 			process_keydown_event(event);
 			hotkey::key_event(event, get_hotkey_command_executor());
+			process_keyup_event(event);
 		} else {
 			process_focus_keydown_event(event);
-			break;
 		}
-		// intentionally fall-through
+		break;
 	case SDL_KEYUP:
 		process_keyup_event(event);
+		hotkey::key_event(event, get_hotkey_command_executor());
 		break;
 	case SDL_JOYBUTTONDOWN:
 		process_keydown_event(event);
@@ -131,40 +134,43 @@ void controller_base::process_keyup_event(const SDL_Event& /*event*/) {
 	//no action by default
 }
 
-bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse_flags, double x_axis, double y_axis)
+bool controller_base::handle_scroll(int mousex, int mousey, int mouse_flags, double x_axis, double y_axis)
 {
 	bool mouse_in_window = (SDL_GetAppState() & SDL_APPMOUSEFOCUS) != 0
 		|| preferences::get("scroll_when_mouse_outside", true);
-	bool keyboard_focus = have_keyboard_focus();
 	int scroll_speed = preferences::scroll_speed();
 	int dx = 0, dy = 0;
 	int scroll_threshold = (preferences::mouse_scroll_enabled())
 		? preferences::mouse_scroll_threshold() : 0;
-	BOOST_FOREACH(const theme::menu& m, get_display().get_theme().menus()) {
+	for (const theme::menu& m : get_display().get_theme().menus()) {
 		if (sdl::point_in_rect(mousex, mousey, m.get_location())) {
 			scroll_threshold = 0;
 		}
 	}
-	if ((key[SDLK_UP] && keyboard_focus) ||
-	    (mousey < scroll_threshold && mouse_in_window))
-	{
-		dy -= scroll_speed;
+
+	// apply keyboard scrolling
+	dy -= scroll_up_ * scroll_speed;
+	dy += scroll_down_ * scroll_speed;
+	dx -= scroll_left_ * scroll_speed;
+	dx += scroll_right_ * scroll_speed;
+
+	// scroll if mouse is placed near the edge of the screen
+	if (mouse_in_window) {
+		if (mousey < scroll_threshold) {
+			dy -= scroll_speed;
+		}
+		if (mousey > get_display().h() - scroll_threshold) {
+			dy += scroll_speed;
+		}
+		if (mousex < scroll_threshold) {
+			dx -= scroll_speed;
+		}
+		if (mousex > get_display().w() - scroll_threshold) {
+			dx += scroll_speed;
+		}
 	}
-	if ((key[SDLK_DOWN] && keyboard_focus) ||
-	    (mousey > get_display().h() - scroll_threshold && mouse_in_window))
-	{
-		dy += scroll_speed;
-	}
-	if ((key[SDLK_LEFT] && keyboard_focus) ||
-	    (mousex < scroll_threshold && mouse_in_window))
-	{
-		dx -= scroll_speed;
-	}
-	if ((key[SDLK_RIGHT] && keyboard_focus) ||
-	    (mousex > get_display().w() - scroll_threshold && mouse_in_window))
-	{
-		dx += scroll_speed;
-	}
+
+	// scroll with middle-mouse if enabled
 	if ((mouse_flags & SDL_BUTTON_MMASK) != 0 && preferences::middle_click_scrolls()) {
 		const map_location original_loc = get_mouse_handler_base().get_scroll_start();
 
@@ -188,6 +194,7 @@ bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse
 		}
 	}
 
+	// scroll with joystick
 	dx += round_double( x_axis * scroll_speed);
 	dy += round_double( y_axis * scroll_speed);
 
@@ -212,14 +219,14 @@ void controller_base::play_slice(bool is_delay_enabled)
 	}
 
 	const theme::menu* const m = get_display().menu_pressed();
-	if(m != NULL) {
+	if(m != nullptr) {
 		const SDL_Rect& menu_loc = m->location(get_display().screen_area());
 		show_menu(m->items(),menu_loc.x+1,menu_loc.y + menu_loc.h + 1,false, get_display());
 
 		return;
 	}
 	const theme::action* const a = get_display().action_pressed();
-	if(a != NULL) {
+	if(a != nullptr) {
 		const SDL_Rect& action_loc = a->location(get_display().screen_area());
 		execute_action(a->items(), action_loc.x+1, action_loc.y + action_loc.h + 1,false);
 
@@ -241,7 +248,7 @@ void controller_base::play_slice(bool is_delay_enabled)
 	mousey += values.second * 10;
 	SDL_WarpMouse(mousex, mousey);
 	*/
-	scrolling_ = handle_scroll(key, mousex, mousey, mouse_flags, joystickx, joysticky);
+	scrolling_ = handle_scroll(mousex, mousey, mouse_flags, joystickx, joysticky);
 
 	map_location highlighted_hex = get_display().mouseover_hex();
 
@@ -308,7 +315,7 @@ void controller_base::execute_action(const std::vector<std::string>& items_arg, 
 	}
 
 	std::vector<std::string> items;
-	BOOST_FOREACH(const std::string& item, items_arg) {
+	for (const std::string& item : items_arg) {
 
 		const hotkey::hotkey_command& command = hotkey::get_hotkey_command(item);
 		if(cmd_exec->can_execute_command(command))
@@ -343,4 +350,24 @@ const config& controller_base::get_theme(const config& game_config, std::string 
 
 	static config empty;
 	return empty;
+}
+
+void controller_base::set_scroll_up(bool on)
+{
+	scroll_up_ = on;
+}
+
+void controller_base::set_scroll_down(bool on)
+{
+	scroll_down_ = on;
+}
+
+void controller_base::set_scroll_left(bool on)
+{
+	scroll_left_ = on;
+}
+
+void controller_base::set_scroll_right(bool on)
+{
+	scroll_right_ = on;
 }

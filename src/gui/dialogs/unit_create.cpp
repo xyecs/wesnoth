@@ -42,9 +42,7 @@
 #include "team.hpp"
 #include "units/types.hpp"
 
-#include "utils/foreach.hpp"
-
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 static std::string last_chosen_type_id = "";
 static unit_race::GENDER last_gender = unit_race::MALE;
@@ -113,15 +111,15 @@ void tunit_create::pre_show(twindow& window)
 			= find_widget<ttext_box>(&window, "filter_box", false, true);
 
 	filter->set_text_changed_callback(
-			boost::bind(&tunit_create::filter_text_changed, this, _1, _2));
+			std::bind(&tunit_create::filter_text_changed, this, _1, _2));
 
 	window.keyboard_capture(filter);
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 	connect_signal_notify_modified(*list,
-								   boost::bind(&tunit_create::list_item_clicked,
+								   std::bind(&tunit_create::list_item_clicked,
 											   *this,
-											   boost::ref(window)));
+											   std::ref(window)));
 #else
 	list.set_callback_value_change(
 			dialog_callback<tunit_create, &tunit_create::list_item_clicked>);
@@ -129,7 +127,7 @@ void tunit_create::pre_show(twindow& window)
 
 	list.clear();
 
-	FOREACH(const AUTO & i, unit_types.types())
+	for(const auto & i : unit_types.types())
 	{
 		if(i.second.do_not_list())
 			continue;
@@ -161,11 +159,11 @@ void tunit_create::pre_show(twindow& window)
 	}
 
 	std::vector<tgenerator_::torder_func> order_funcs(2);
-	order_funcs[0] = boost::bind(&tunit_create::compare_race, this, _1, _2);
-	order_funcs[1] = boost::bind(&tunit_create::compare_race_rev, this, _1, _2);
+	order_funcs[0] = std::bind(&tunit_create::compare_race, this, _1, _2);
+	order_funcs[1] = std::bind(&tunit_create::compare_race_rev, this, _1, _2);
 	list.set_column_order(0, order_funcs);
-	order_funcs[0] = boost::bind(&tunit_create::compare_type, this, _1, _2);
-	order_funcs[1] = boost::bind(&tunit_create::compare_type_rev, this, _1, _2);
+	order_funcs[0] = std::bind(&tunit_create::compare_type, this, _1, _2);
+	order_funcs[1] = std::bind(&tunit_create::compare_type_rev, this, _1, _2);
 	list.set_column_order(1, order_funcs);
 
 	list_item_clicked(window);
@@ -228,7 +226,7 @@ void tunit_create::list_item_clicked(twindow& window)
 		.set_displayed_type(units_[selected_row]);
 }
 
-bool tunit_create::filter_text_changed(ttext_* textbox, const std::string& text)
+void tunit_create::filter_text_changed(ttext_* textbox, const std::string& text)
 {
 	twindow& window = *textbox->get_window();
 
@@ -237,7 +235,7 @@ bool tunit_create::filter_text_changed(ttext_* textbox, const std::string& text)
 	const std::vector<std::string> words = utils::split(text, ' ');
 
 	if(words == last_words_)
-		return false;
+		return;
 	last_words_ = words;
 
 	std::vector<bool> show_items(list.get_item_count(), true);
@@ -251,7 +249,7 @@ bool tunit_create::filter_text_changed(ttext_* textbox, const std::string& text)
 					= find_widget<tlabel>(*it, "unit_type", false);
 
 			bool found = false;
-			FOREACH(const AUTO & word, words)
+			for(const auto & word : words)
 			{
 				found = std::search(type_label.label().str().begin(),
 									type_label.label().str().end(),
@@ -271,8 +269,6 @@ bool tunit_create::filter_text_changed(ttext_* textbox, const std::string& text)
 	}
 
 	list.set_row_shown(show_items);
-
-	return false;
 }
 
 void tunit_create::gender_toggle_callback(twindow&)

@@ -36,7 +36,7 @@ public:
 
 private:
 	/** See @ref twidget::calculate_best_size. */
-	virtual tpoint calculate_best_size() const OVERRIDE;
+	virtual tpoint calculate_best_size() const override;
 
 public:
 	/***** ***** ***** ***** Inherited ***** ***** ***** *****/
@@ -68,7 +68,7 @@ public:
 	{
 		return minimum_value_ + get_item_count() - 1;
 	}
-	typedef boost::function<t_string(int /*current position*/, int /*num positions*/)> tlabel_creator;
+	typedef std::function<t_string(int /*current position*/, int /*num positions*/)> tlabel_creator;
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	void set_best_slider_length(const unsigned length)
@@ -154,7 +154,7 @@ private:
 	}
 
 	/** See @ref tcontrol::update_canvas. */
-	virtual void update_canvas() OVERRIDE;
+	virtual void update_canvas() override;
 
 	/**
 	 * When the slider shows the minimum value can show a special text.
@@ -177,7 +177,7 @@ private:
 	tlabel_creator value_labels_;
 
 	/** See @ref tcontrol::get_control_type. */
-	virtual const std::string& get_control_type() const OVERRIDE;
+	virtual const std::string& get_control_type() const override;
 
 	/**
 	 * Handlers for keyboard input

@@ -14,11 +14,11 @@
 
 #include "scripting/lua_race.hpp"
 
-#include "race.hpp"
+#include "units/race.hpp"
 #include "scripting/lua_common.hpp"
 #include "units/types.hpp"
+#include "utils/name_generator.hpp"
 
-#include <boost/foreach.hpp>
 #include <string>
 
 #include "lua/lua.h"
@@ -31,6 +31,7 @@
 
 // Registry key
 static const char * Race = "race";
+static const char * Gen = "name generator";
 
 /**
  * Gets some data on a race (__index metamethod).
@@ -57,14 +58,14 @@ static int impl_race_get(lua_State* L)
 	if (strcmp(m, "traits") == 0) {
 		lua_newtable(L);
 		if (race.uses_global_traits()) {
-			BOOST_FOREACH(const config& trait, unit_types.traits()) {
+			for (const config& trait : unit_types.traits()) {
 				const std::string& id = trait["id"];
 				lua_pushlstring(L, id.c_str(), id.length());
 				luaW_pushconfig(L, trait);
 				lua_rawset(L, -3);
 			}
 		}
-		BOOST_FOREACH(const config& trait, race.additional_traits()) {
+		for (const config& trait : race.additional_traits()) {
 			const std::string& id = trait["id"];
 			lua_pushlstring(L, id.c_str(), id.length());
 			luaW_pushconfig(L, trait);
@@ -72,7 +73,35 @@ static int impl_race_get(lua_State* L)
 		}
 		return 1;
 	}
+	if (strcmp(m, "male_name_gen") == 0) {
+		new(lua_newuserdata(L, sizeof(proxy_name_generator)))
+			proxy_name_generator(race.generator(unit_race::MALE));
+		luaL_getmetatable(L, Gen);
+		lua_setmetatable(L, -2);
+		return 1;
+	}
+	if (strcmp(m, "female_name_gen") == 0) {
+		new(lua_newuserdata(L, sizeof(proxy_name_generator)))
+			proxy_name_generator(race.generator(unit_race::FEMALE));
+		luaL_getmetatable(L, Gen);
+		lua_setmetatable(L, -2);
+		return 1;
+	}
 
+	return 0;
+}
+
+static int impl_name_generator_call(lua_State *L)
+{
+	name_generator* gen = static_cast<name_generator*>(lua_touserdata(L, 1));
+	lua_pushstring(L, gen->generate().c_str());
+	return 1;
+}
+
+static int impl_name_generator_collect(lua_State *L)
+{
+	name_generator* gen = static_cast<name_generator*>(lua_touserdata(L, 1));
+	gen->~name_generator();
 	return 0;
 }
 
@@ -84,12 +113,20 @@ namespace lua_race {
 
 		static luaL_Reg const callbacks[] = {
 			{ "__index", 	    &impl_race_get},
-			{ NULL, NULL }
+			{ nullptr, nullptr }
 		};
 		luaL_setfuncs(L, callbacks, 0);
 
 		lua_pushstring(L, "race");
 		lua_setfield(L, -2, "__metatable");
+		
+		luaL_newmetatable(L, Gen);
+		static luaL_Reg const generator[] = {
+			{ "__call", &impl_name_generator_call},
+			{ "__gc", &impl_name_generator_collect},
+			{ nullptr, nullptr}
+		};
+		luaL_setfuncs(L, generator, 0);
 
 		return "Adding getrace metatable...\n";
 	}
@@ -108,7 +145,7 @@ void luaW_pushracetable(lua_State *L)
 	const race_map& races = unit_types.races();
 	lua_createtable(L, 0, races.size());
 
-	BOOST_FOREACH(const race_map::value_type &race, races)
+	for (const race_map::value_type &race : races)
 	{
 		assert(race.first == race.second.id());
 		luaW_pushrace(L, race.second);

@@ -52,20 +52,20 @@ public:
 
 	/** See @ref twidget::find_at. */
 	virtual twidget* find_at(const tpoint& coordinate,
-							 const bool must_be_active) OVERRIDE;
+							 const bool must_be_active) override;
 
 	/** See @ref twidget::find_at. */
 	virtual const twidget* find_at(const tpoint& coordinate,
-								   const bool must_be_active) const OVERRIDE;
+								   const bool must_be_active) const override;
 
 	/** See @ref tcontrol::set_active. */
-	virtual void set_active(const bool active) OVERRIDE;
+	virtual void set_active(const bool active) override;
 
 	/** See @ref tcontrol::get_active. */
-	virtual bool get_active() const OVERRIDE;
+	virtual bool get_active() const override;
 
 	/** See @ref tcontrol::get_state. */
-	virtual unsigned get_state() const OVERRIDE;
+	virtual unsigned get_state() const override;
 
 	/**
 	 * See @ref tcontainer_::get_client_rect.
@@ -74,7 +74,7 @@ public:
 	 * tpanel_definition we need to override this function and do about the
 	 * same, look at a way to 'fix' that.
 	 */
-	virtual SDL_Rect get_client_rect() const OVERRIDE;
+	virtual SDL_Rect get_client_rect() const override;
 
 	/**
 	 * See @ref tcontainer_::border_space.
@@ -83,10 +83,10 @@ public:
 	 * tpanel_definition we need to override this function and do about the
 	 * same, look at a way to 'fix' that.
 	 */
-	virtual tpoint border_space() const OVERRIDE;
+	virtual tpoint border_space() const override;
 
 	/** Inherited from tselectable_ */
-	unsigned get_value() const OVERRIDE
+	unsigned get_value() const override
 	{
 		return state_num_;;
 	}
@@ -95,20 +95,20 @@ public:
 	void set_value(const unsigned selected);
 
 	/** Inherited from tselectable_ */
-	unsigned num_states() const OVERRIDE;
+	unsigned num_states() const override;
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	void set_retval(const int retval);
 
 	/** Inherited from tselectable_. */
-	void set_callback_state_change(boost::function<void(twidget&)> callback)
+	void set_callback_state_change(std::function<void(twidget&)> callback)
 	{
 		callback_state_change_ = callback;
 	}
 
 	void set_callback_mouse_left_double_click(
-			boost::function<void(twidget&)> callback)
+			std::function<void(twidget&)> callback)
 	{
 		callback_mouse_left_double_click_ = callback;
 	}
@@ -153,23 +153,23 @@ private:
 	int retval_;
 
 	/** See tselectable_::set_callback_state_change. */
-	boost::function<void(twidget&)> callback_state_change_;
+	std::function<void(twidget&)> callback_state_change_;
 
 	/** Mouse left double click callback */
-	boost::function<void(twidget&)> callback_mouse_left_double_click_;
+	std::function<void(twidget&)> callback_mouse_left_double_click_;
 
 	/** See @ref twidget::impl_draw_background. */
 	virtual void impl_draw_background(surface& frame_buffer,
 									  int x_offset,
-									  int y_offset) OVERRIDE;
+									  int y_offset) override;
 
 	/** See @ref twidget::impl_draw_foreground. */
 	virtual void impl_draw_foreground(surface& frame_buffer,
 									  int x_offset,
-									  int y_offset) OVERRIDE;
+									  int y_offset) override;
 
 	/** See @ref tcontrol::get_control_type. */
-	virtual const std::string& get_control_type() const OVERRIDE;
+	virtual const std::string& get_control_type() const override;
 
 	/***** ***** ***** signal handlers ***** ****** *****/
 

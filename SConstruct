@@ -103,7 +103,7 @@ opts.AddVariables(
     BoolVariable('ccache', "Use ccache", False),
     ('ctool', 'Set c compiler command if not using standard compiler.'),
     ('cxxtool', 'Set c++ compiler command if not using standard compiler.'),
-    BoolVariable('cxx0x', 'Use C++0x features.', False),
+    EnumVariable('cxx_std', 'Target c++ std version', '11', ['11', '14', '1y']),
     BoolVariable('openmp', 'Enable openmp use.', False),
     BoolVariable("fast", "Make scons faster at cost of less precise dependency tracking.", False),
     BoolVariable("lockfile", "Create a lockfile to prevent multiple instances of scons from being run at the same time on this working copy.", False),
@@ -410,7 +410,8 @@ if env["prereqs"]:
         conf.CheckPango("cairo", require_version = "1.21.3") & \
         conf.CheckPKG("fontconfig") & \
         conf.CheckBoost("program_options", require_version="1.35.0") & \
-        conf.CheckBoost("regex", require_version = "1.35.0") \
+        conf.CheckBoost("thread") & \
+        conf.CheckBoost("regex") \
             or Warning("WARN: Client prerequisites are not met. wesnoth, cutter and exploder cannot be built")
 
     have_X = False
@@ -500,11 +501,8 @@ for env in [test_env, client_env, env]:
     if "gcc" in env["TOOLS"]:
         env.AppendUnique(CCFLAGS = Split("-W -Wall"), CFLAGS = ["-std=c99"])
 
-        if env['cxx0x']:
-            env.AppendUnique(CXXFLAGS = "-std=c++0x")
-            env.Append(CPPDEFINES = "HAVE_CXX0X")
-        else:
-            env.AppendUnique(CXXFLAGS = "-std=c++98")
+        env.AppendUnique(CXXFLAGS = "-std=c++" + env["cxx_std"])
+        env.Append(CPPDEFINES = "HAVE_CXX0X")
 
         if env['openmp']:
             env.AppendUnique(CXXFLAGS = ["-fopenmp"], LIBS = ["gomp"])

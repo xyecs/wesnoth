@@ -31,8 +31,6 @@
 #include "gui/widgets/window.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/static_assert.hpp>
-
 namespace gui2
 {
 
@@ -54,7 +52,7 @@ public:
 	 * @param mandatory           Is the widget mandatory
 	 */
 	tfield_(const std::string& id, const bool mandatory)
-		: id_(id), mandatory_(mandatory), widget_(NULL)
+		: id_(id), mandatory_(mandatory), widget_(nullptr)
 	{
 	}
 
@@ -74,7 +72,7 @@ public:
 	 * @todo Most functions that have a window parameter only use it to get the
 	 * widget. Evaluate and remove the window parameter where applicable.
 	 *
-	 * @pre widget_ == NULL
+	 * @pre widget_ == nullptr
 	 *
 	 * @param window               The window to be attached to.
 	 */
@@ -130,12 +128,12 @@ public:
 	/**
 	 * Detaches the field from a window.
 	 *
-	 * @pre widget_ != NULL || !mandatory_
+	 * @pre widget_ != nullptr || !mandatory_
 	 */
 	void detach_from_window()
 	{
 		assert(!mandatory_ || widget_);
-		widget_ = NULL;
+		widget_ = nullptr;
 	}
 
 	/**
@@ -281,15 +279,15 @@ public:
 	 */
 	tfield(const std::string& id,
 		   const bool mandatory,
-		   const boost::function<T()>& callback_load_value,
-		   const boost::function<void(CT)>& callback_save_value)
+		   const std::function<T()>& callback_load_value,
+		   const std::function<void(CT)>& callback_save_value)
 		: tfield_(id, mandatory)
 		, value_(T())
 		, link_(value_)
 		, callback_load_value_(callback_load_value)
 		, callback_save_value_(callback_save_value)
 	{
-		BOOST_STATIC_ASSERT((!boost::is_same<tcontrol, W>::value));
+		static_assert((!boost::is_same<tcontrol, W>::value), "Second template argument cannot be tcontrol");
 	}
 
 	/**
@@ -310,10 +308,10 @@ public:
 		: tfield_(id, mandatory)
 		, value_(T())
 		, link_(linked_variable)
-		, callback_load_value_(boost::function<T()>())
-		, callback_save_value_(boost::function<void(CT)>())
+		, callback_load_value_(std::function<T()>())
+		, callback_save_value_(std::function<void(CT)>())
 	{
-		BOOST_STATIC_ASSERT((!boost::is_same<tcontrol, W>::value));
+		static_assert((!boost::is_same<tcontrol, W>::value), "Second template argument cannot be tcontrol");
 	}
 
 	/**
@@ -337,10 +335,10 @@ public:
 		: tfield_(id, mandatory)
 		, value_(value)
 		, link_(value_)
-		, callback_load_value_(boost::function<T()>())
-		, callback_save_value_(boost::function<void(CT)>())
+		, callback_load_value_(std::function<T()>())
+		, callback_save_value_(std::function<void(CT)>())
 	{
-		BOOST_STATIC_ASSERT((boost::is_same<tcontrol, W>::value));
+		static_assert((boost::is_same<tcontrol, W>::value), "Second template argument must be tcontrol");
 	}
 
 	/** Inherited from tfield_. */
@@ -423,7 +421,7 @@ private:
 	 *
 	 * This is used to load the initial value of the widget, if defined.
 	 */
-	boost::function<T()> callback_load_value_;
+	std::function<T()> callback_load_value_;
 
 	/** Inherited from tfield_. */
 	void init_generic(twindow& window)
@@ -457,7 +455,7 @@ private:
 	 * Once the dialog has been successful this function is used to store the
 	 * result of this widget.
 	 */
-	boost::function<void(CT)> callback_save_value_;
+	std::function<void(CT)> callback_save_value_;
 
 	/**
 	 * Test whether the widget exists if the widget is mandatory.
@@ -551,9 +549,9 @@ class tfield_bool : public tfield<bool, tselectable_>
 public:
 	tfield_bool(const std::string& id,
 				const bool mandatory,
-				const boost::function<bool()>& callback_load_value,
-				const boost::function<void(const bool)>& callback_save_value,
-				const boost::function<void(twidget&)>& callback_change)
+				const std::function<bool()>& callback_load_value,
+				const std::function<void(const bool)>& callback_save_value,
+				const std::function<void(twidget&)>& callback_change)
 		: tfield<bool, gui2::tselectable_>(
 				  id, mandatory, callback_load_value, callback_save_value)
 		, callback_change_(callback_change)
@@ -563,7 +561,7 @@ public:
 	tfield_bool(const std::string& id,
 				const bool mandatory,
 				bool& linked_variable,
-				const boost::function<void(twidget&)>& callback_change)
+				const std::function<void(twidget&)>& callback_change)
 		: tfield<bool, gui2::tselectable_>(id, mandatory, linked_variable)
 		, callback_change_(callback_change)
 	{
@@ -583,7 +581,7 @@ private:
 		}
 	}
 
-	boost::function<void(twidget&)> callback_change_;
+	std::function<void(twidget&)> callback_change_;
 };
 
 /** Specialized field class for text. */
@@ -592,8 +590,8 @@ class tfield_text : public tfield<std::string, ttext_, const std::string&>
 public:
 	tfield_text(const std::string& id,
 				const bool mandatory,
-				const boost::function<std::string()>& callback_load_value,
-				const boost::function<void(const std::string&)>&
+				const std::function<std::string()>& callback_load_value,
+				const std::function<void(const std::string&)>&
 						callback_save_value)
 		: tfield<std::string, ttext_, const std::string&>(
 				  id, mandatory, callback_load_value, callback_save_value)

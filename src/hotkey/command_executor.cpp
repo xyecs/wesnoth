@@ -15,8 +15,6 @@
 #include "command_executor.hpp"
 #include "hotkey_item.hpp"
 
-#include <boost/foreach.hpp>
-
 #include "gui/dialogs/lua_interpreter.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/screenshot_notification.hpp"
@@ -32,8 +30,7 @@
 #include "display.hpp"
 #include "quit_confirmation.hpp"
 
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #include <cassert>
 
@@ -61,7 +58,7 @@ void make_screenshot(const std::string& name, CVideo& video, const TFunc& func)
 	const std::string ext = ".bmp";
 #endif
 	filename = filesystem::get_next_filename(filename, ext);
-	const bool res = func(filename);
+	const bool res = func(filename, video);
 	if (res) {
 		gui2::tscreenshot_notification::display(filename, video);
 	} else {
@@ -75,9 +72,45 @@ namespace hotkey {
 
 static void event_execute(const SDL_Event& event, command_executor* executor);
 
-bool command_executor::execute_command(const hotkey_command&  cmd, int /*index*/)
+bool command_executor::execute_command(const hotkey_command&  cmd, int /*index*/, bool press)
 {
+	// hotkey release handling
+	if (!press) {
+		switch(cmd.id) {
+			// release a scroll key, un-apply scrolling in the given direction
+			case HOTKEY_SCROLL_UP:
+				scroll_up(false);
+				break;
+			case HOTKEY_SCROLL_DOWN:
+				scroll_down(false);
+				break;
+			case HOTKEY_SCROLL_LEFT:
+				scroll_left(false);
+				break;
+			case HOTKEY_SCROLL_RIGHT:
+				scroll_right(false);
+				break;
+			default:
+				return false; // nothing else handles a hotkey release
+		}
+
+		return true;
+	}
+
+	// hotkey press handling
 	switch(cmd.id) {
+		case HOTKEY_SCROLL_UP:
+			scroll_up(true);
+			break;
+		case HOTKEY_SCROLL_DOWN:
+			scroll_down(true);
+			break;
+		case HOTKEY_SCROLL_LEFT:
+			scroll_left(true);
+			break;
+		case HOTKEY_SCROLL_RIGHT:
+			scroll_right(true);
+			break;
 		case HOTKEY_CYCLE_UNITS:
 			cycle_units();
 			break;
@@ -463,26 +496,29 @@ void basic_handler::handle_event(const SDL_Event& event)
 
 	switch (event.type) {
 	case SDL_KEYDOWN:
+	case SDL_KEYUP:
 		// If we're in a dialog we only want to handle items that are explicitly
 		// handled by the executor.
 		// If we're not in a dialog we can call the regular key event handler.
 		if (!gui::in_dialog()) {
 			key_event(event,exec_);
-		} else if (exec_ != NULL) {
+		} else if (exec_ != nullptr) {
 			event_execute(event,exec_);
 		}
 		break;
 	case SDL_JOYBUTTONDOWN:
+	case SDL_JOYBUTTONUP:
 		if (!gui::in_dialog()) {
 			jbutton_event(event,exec_);
-		} else if (exec_ != NULL) {
+		} else if (exec_ != nullptr) {
 			event_execute(event,exec_);
 		}
 		break;
 	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
 		if (!gui::in_dialog()) {
 			mbutton_event(event,exec_);
-		} else if (exec_ != NULL) {
+		} else if (exec_ != nullptr) {
 			event_execute(event,exec_);
 		}
 		break;
@@ -518,18 +554,25 @@ static void event_execute( const SDL_Event& event, command_executor* executor)
 		return;
 	}
 
-	execute_command(hotkey::get_hotkey_command(hk->get_command()), executor);
+	bool press = event.type == SDL_KEYDOWN || event.type == SDL_JOYBUTTONDOWN || event.type == SDL_MOUSEBUTTONDOWN;
+
+	execute_command(hotkey::get_hotkey_command(hk->get_command()), executor, -1, press);
 	executor->set_button_state();
 }
 
-void execute_command(const hotkey_command& command, command_executor* executor, int index)
+void execute_command(const hotkey_command& command, command_executor* executor, int index, bool press)
 {
-	if (executor != NULL) {
+	if (executor != nullptr) {
 		if (!executor->can_execute_command(command, index)
-				|| executor->execute_command(command, index)) {
+				|| executor->execute_command(command, index, press)) {
 			return;
 		}
 	}
+
+	if (!press) {
+		return; // none of the commands here respond to a key release
+    }
+
 	switch (command.id) {
 
 		case HOTKEY_MINIMAP_DRAW_TERRAIN:
@@ -556,7 +599,7 @@ void execute_command(const hotkey_command& command, command_executor* executor, 
 			executor->get_video().set_fullscreen(!preferences::fullscreen());
 			break;
 		case HOTKEY_SCREENSHOT:
-			make_screenshot(_("Screenshot"), executor->get_video(), boost::bind(&::screenshot, _1, boost::ref(executor->get_video())));
+			make_screenshot(_("Screenshot"), executor->get_video(), &::screenshot);
 			break;
 		case HOTKEY_ANIMATE_MAP:
 			preferences::set_animate_map(!preferences::animate_map());
@@ -597,12 +640,12 @@ void execute_command(const hotkey_command& command, command_executor* executor, 
 void command_executor_default::set_button_state()
 {
 	display& disp = get_display();
-	BOOST_FOREACH(const theme::menu& menu, disp.get_theme().menus()) {
+	for (const theme::menu& menu : disp.get_theme().menus()) {
 
 		gui::button* button = disp.find_menu_button(menu.get_id());
 		if (!button) continue;
 		bool enabled = false;
-		BOOST_FOREACH(const std::string& command, menu.items()) {
+		for (const std::string& command : menu.items()) {
 
 			const hotkey::hotkey_command& command_obj = hotkey::get_hotkey_command(command);
 			bool can_execute = can_execute_command(command_obj);
@@ -614,13 +657,13 @@ void command_executor_default::set_button_state()
 		button->enable(enabled);
 	}
 
-	BOOST_FOREACH(const theme::action& action, disp.get_theme().actions()) {
+	for (const theme::action& action : disp.get_theme().actions()) {
 
 		gui::button* button = disp.find_action_button(action.get_id());
 		if (!button) continue;
 		bool enabled = false;
 		int i = 0;
-		BOOST_FOREACH(const std::string& command, action.items()) {
+		for (const std::string& command : action.items()) {
 
 			const hotkey::hotkey_command& command_obj = hotkey::get_hotkey_command(command);
 			std::string tooltip = action.tooltip(i);

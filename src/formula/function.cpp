@@ -22,7 +22,6 @@
 #include "game_config.hpp"
 #include "log.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
 using namespace boost::math::constants;
 
@@ -46,7 +45,7 @@ std::string function_expression::str() const
 	s << get_name();
 	s << '(';
 	bool first_arg = true;
-	BOOST_FOREACH(expression_ptr a , args()) {
+	for (expression_ptr a : args()) {
 		if (!first_arg) {
 			s << ',';
 		} else {
@@ -69,7 +68,7 @@ private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 		boost::shared_ptr<formula_debugger> fdbp;
 		bool need_wrapper = false;
-		if (fdb==NULL) {
+		if (fdb==nullptr) {
 			fdbp = boost::shared_ptr<formula_debugger>(new formula_debugger());
 			fdb = &*fdbp;
 			need_wrapper = true;
@@ -287,19 +286,19 @@ private:
 
 		if( args().size() == 1)
 		{
-			str1 = var1.to_debug_string(NULL, true);
+			str1 = var1.to_debug_string(nullptr, true);
 			LOG_SF << str1 << std::endl;
 			if(game_config::debug) {
-				game_display::get_singleton()->get_chat_manager().add_chat_message(time(NULL), "WFL", 0, str1, events::chat_handler::MESSAGE_PUBLIC, false);
+				game_display::get_singleton()->get_chat_manager().add_chat_message(time(nullptr), "WFL", 0, str1, events::chat_handler::MESSAGE_PUBLIC, false);
 			}
 			return var1;
 		} else {
 			str1 = var1.string_cast();
 			const variant var2 = args()[1]->evaluate(variables,fdb);
-			str2 = var2.to_debug_string(NULL, true);
+			str2 = var2.to_debug_string(nullptr, true);
 			LOG_SF << str1 << str2 << std::endl;
 			if(game_config::debug) {
-				game_display::get_singleton()->get_chat_manager().add_chat_message(time(NULL), str1, 0, str2, events::chat_handler::MESSAGE_PUBLIC, false);
+				game_display::get_singleton()->get_chat_manager().add_chat_message(time(nullptr), str1, 0, str2, events::chat_handler::MESSAGE_PUBLIC, false);
 			}
 			return var2;
 		}
@@ -333,7 +332,7 @@ private:
 		str << "Evaluated in " << (run_time / 1000.0) << " ms on average";
 		LOG_SF << speaker << ": " << str.str() << std::endl;
 		if(game_config::debug) {
-			game_display::get_singleton()->get_chat_manager().add_chat_message(time(NULL), speaker, 0, str.str(), events::chat_handler::MESSAGE_PUBLIC, false);
+			game_display::get_singleton()->get_chat_manager().add_chat_message(time(nullptr), speaker, 0, str.str(), events::chat_handler::MESSAGE_PUBLIC, false);
 		}
 		return value;
 	}
@@ -407,11 +406,16 @@ private:
 		} else
 		{
 			for(variant_iterator it = var_1.begin(); it != var_1.end(); ++it) {
-				std::map<variant, variant>::iterator map_it = tmp.find( *it );
-				if (map_it == tmp.end())
-					tmp[ *it ] = variant( 1 );
-				else
-					map_it->second = variant(map_it->second.as_int() + 1);
+				if (key_value_pair* kv = (*it).try_convert<key_value_pair>())
+					tmp[kv->query_value("key")] = kv->query_value("value");
+				else {
+					std::map<variant, variant>::iterator map_it = tmp.find( *it );
+					if (map_it == tmp.end()) {
+						tmp[*it] = variant(1);
+					} else {
+						map_it->second = variant(map_it->second.as_int() + 1);
+					}
+				}
 			}
 		}
 
@@ -510,7 +514,7 @@ private:
 		variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 			std::string result;
 
-			BOOST_FOREACH(expression_ptr arg, args()) {
+			for(expression_ptr arg : args()) {
 					result += arg->evaluate(variables, fdb).string_cast();
 			}
 
@@ -1072,7 +1076,7 @@ private:
 		} else {
 			std::vector<variant> input;
 			input.reserve(args().size());
-			BOOST_FOREACH(expression_ptr expr, args()) {
+			for(expression_ptr expr : args()) {
 				input.push_back(expr->evaluate(variables, fdb));
 			}
 			return input;
@@ -1356,6 +1360,20 @@ private:
 	}
 };
 
+class pair_function : public function_expression {
+public:
+	explicit pair_function(const args_list& args)
+	  : function_expression("pair", args, 2, 2)
+	{}
+private:
+	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
+		return variant(new key_value_pair(
+			args()[0]->evaluate(variables,add_debug_info(fdb,0,"pair:key")),
+			args()[1]->evaluate(variables,add_debug_info(fdb,1,"pair_value"))
+		));
+	}
+};
+
 class distance_between_function : public function_expression {
 public:
 	explicit distance_between_function(const args_list& args)
@@ -1403,6 +1421,15 @@ void key_value_pair::get_inputs(std::vector<game_logic::formula_input>* inputs) 
 		inputs->push_back(game_logic::formula_input("value", game_logic::FORMULA_READ_ONLY));
 }
 
+	
+void key_value_pair::serialize_to_string(std::string& str) const {
+	str += "pair(";
+	key_.serialize_to_string(str);
+	str += ",";
+	value_.serialize_to_string(str);
+	str += ")";
+}
+
 formula_function_expression::formula_function_expression(const std::string& name, const args_list& args, const_formula_ptr formula, const_formula_ptr precondition, const std::vector<std::string>& arg_names)
   : function_expression(name, args, arg_names.size(), arg_names.size()),
     formula_(formula), precondition_(precondition), arg_names_(arg_names), star_arg_(-1)
@@ -1448,21 +1475,21 @@ variant formula_function_expression::execute(const formula_callable& variables, 
 	return res;
 }
 
-function_expression_ptr formula_function::generate_function_expression(const std::vector<expression_ptr>& args) const
+function_expression_ptr user_formula_function::generate_function_expression(const std::vector<expression_ptr>& args) const
 {
 	return function_expression_ptr(new formula_function_expression(name_, args, formula_, precondition_, args_));
 }
 
-void function_symbol_table::add_formula_function(const std::string& name, const_formula_ptr formula, const_formula_ptr precondition, const std::vector<std::string>& args)
+void function_symbol_table::add_function(const std::string& name, formula_function_ptr fcn)
 {
-	custom_formulas_[name] = formula_function(name, formula, precondition, args);
+	custom_formulas_[name] = fcn;
 }
 
 expression_ptr function_symbol_table::create_function(const std::string& fn, const std::vector<expression_ptr>& args) const
 {
-	const std::map<std::string, formula_function>::const_iterator i = custom_formulas_.find(fn);
+	const functions_map::const_iterator i = custom_formulas_.find(fn);
 	if(i != custom_formulas_.end()) {
-		return i->second.generate_function_expression(args);
+		return i->second->generate_function_expression(args);
 	}
 
 	return expression_ptr();
@@ -1471,7 +1498,7 @@ expression_ptr function_symbol_table::create_function(const std::string& fn, con
 std::vector<std::string> function_symbol_table::get_function_names() const
 {
 	std::vector<std::string> res;
-	for(std::map<std::string, formula_function>::const_iterator iter = custom_formulas_.begin(); iter != custom_formulas_.end(); ++iter ) {
+	for(functions_map::const_iterator iter = custom_formulas_.begin(); iter != custom_formulas_.end(); ++iter ) {
 		res.push_back((*iter).first);
 	}
 	return res;
@@ -1479,45 +1506,12 @@ std::vector<std::string> function_symbol_table::get_function_names() const
 
 namespace {
 
-class base_function_creator {
-public:
-	virtual expression_ptr create_function(const std::vector<expression_ptr>& args) const = 0;
-	virtual ~base_function_creator() {}
-};
-
-template<typename T>
-class function_creator : public base_function_creator {
-public:
-	virtual expression_ptr create_function(const std::vector<expression_ptr>& args) const {
-		return expression_ptr(new T(args));
-	}
-	virtual ~function_creator() {}
-};
-
-typedef std::map<std::string, base_function_creator*> functions_map;
-
-// Takes ownership of the pointers, deleting them at program termination to
-// suppress valgrind false positives
-struct functions_map_manager {
-	functions_map map_;
-	~functions_map_manager() {
-		BOOST_FOREACH (functions_map::value_type & v, map_) {
-			delete(v.second);
-		}
-	}
-};
-
-functions_map& get_functions_map() {
-
-	static functions_map_manager map_man;
-	functions_map & functions_table = map_man.map_;
-
-#ifdef HAVE_VISUAL_LEAK_DETECTOR
-	VLDDisable();
-#endif
+function_symbol_table& get_functions_map() {
+	static function_symbol_table functions_table;
 
 	if(functions_table.empty()) {
-#define FUNCTION(name) functions_table[#name] = new function_creator<name##_function>();
+#define FUNCTION(name) functions_table.add_function(#name, \
+			formula_function_ptr(new builtin_formula_function<name##_function>(#name)))
 		FUNCTION(debug);
 		FUNCTION(dir);
 		FUNCTION(if);
@@ -1526,7 +1520,7 @@ functions_map& get_functions_map() {
 		FUNCTION(min);
 		FUNCTION(max);
 		FUNCTION(choose);
-                FUNCTION(debug_float);
+		FUNCTION(debug_float);
 		FUNCTION(debug_print);
 		FUNCTION(debug_profile);
 		FUNCTION(wave);
@@ -1550,6 +1544,7 @@ functions_map& get_functions_map() {
 		FUNCTION(round);
 		FUNCTION(as_decimal);
 		FUNCTION(refcount);
+		FUNCTION(pair);
 		FUNCTION(loc);
 		FUNCTION(distance_between);
 		FUNCTION(index_of);
@@ -1578,10 +1573,6 @@ functions_map& get_functions_map() {
 #undef FUNCTION
 	}
 
-#ifdef HAVE_VISUAL_LEAK_DETECTOR
-	VLDEnable();
-#endif
-
 	return functions_table;
 }
 
@@ -1597,26 +1588,18 @@ expression_ptr create_function(const std::string& fn,
 			return res;
 		}
 	}
-
-	//DBG_NG << "FN: '" << fn << "' " << fn.size() << "\n";
-
-	functions_map::const_iterator i = get_functions_map().find(fn);
-	if(i == get_functions_map().end()) {
-		throw formula_error("Unknow function: " + fn, "", "", 0);
+	
+	expression_ptr res(get_functions_map().create_function(fn, args));
+	if(!res) {
+		throw formula_error("Unknown function: " + fn, "", "", 0);
 	}
 
-	return i->second->create_function(args);
+	return res;
 }
 
 std::vector<std::string> builtin_function_names()
 {
-	std::vector<std::string> res;
-	const functions_map& m = get_functions_map();
-	for(functions_map::const_iterator i = m.begin(); i != m.end(); ++i) {
-		res.push_back(i->first);
-	}
-
-	return res;
+	return get_functions_map().get_function_names();
 }
 
 }

@@ -17,10 +17,10 @@
 #include "gui/core/event/dispatcher.hpp"
 #include "gui/widgets/selectable.hpp"
 #include "gui/widgets/widget.hpp"
-#include "utils/foreach.hpp"
+#include "utils/iterable_pair.hpp"
 
 #include <vector>
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -44,7 +44,7 @@ public:
 	{
 		members_.push_back(std::make_pair(widget, value));
 
-		dynamic_cast<twidget*>(widget)->connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
+		dynamic_cast<twidget*>(widget)->connect_signal<event::LEFT_BUTTON_CLICK>(std::bind(
 			&tgroup::group_operator, this), event::tdispatcher::front_child);
 	}
 
@@ -53,16 +53,8 @@ public:
 	 */
 	void remove_member(tselectable_* widget)
 	{
-#ifdef HAVE_CXX11
 		members_.erase(std::find_if(members_.begin(), members_.end(),
 			[&widget](const group_type& member){ return member.first == widget; }));
-#else
-		for(group_iterator iter = members_.end() - 1; iter >= members_.begin(); iter--) {
-			if(iter->first == widget) {
-				iter = members_.erase(iter);
-			}
-		}
-#endif
 	}
 
 	/**
@@ -92,7 +84,7 @@ public:
 	 */
 	void group_operator()
 	{
-		FOREACH(AUTO& member, members())
+		for(auto& member : members())
 		{
 			member.first->set_value(false);
 		}
@@ -104,7 +96,7 @@ public:
 	 */
 	T get_active_member_value()
 	{
-		FOREACH(AUTO& member, members())
+		for(auto& member : members())
 		{
 			if(member.first->get_value_bool()) {
 				return member.second;
@@ -120,7 +112,7 @@ public:
 	 */
 	void set_member_states(const T& value)
 	{
-		FOREACH(AUTO& member, members())
+		for(auto& member : members())
 		{
 			member.first->set_value(member.second == value);
 		}

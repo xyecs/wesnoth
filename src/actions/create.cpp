@@ -51,7 +51,6 @@
 #include "variable.hpp"
 #include "whiteboard/manager.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 
 static lg::log_domain log_engine("engine");
@@ -133,14 +132,14 @@ namespace { // Helpers for get_recalls()
 	 */
 	void add_leader_filtered_recalls(const unit_const_ptr leader,
 	                                 std::vector< unit_const_ptr > & result,
-	                                 std::set<size_t> * already_added = NULL)
+	                                 std::set<size_t> * already_added = nullptr)
 	{
 		const team& leader_team = (*resources::teams)[leader->side()-1];
 		const std::string& save_id = leader_team.save_id();
 
 		const unit_filter ufilt(vconfig(leader->recall_filter()), resources::filter_con);
 
-		BOOST_FOREACH(const unit_const_ptr & recall_unit_ptr, leader_team.recall_list())
+		for (const unit_const_ptr & recall_unit_ptr : leader_team.recall_list())
 		{
 			const unit & recall_unit = *recall_unit_ptr;
 			// Do not add a unit twice.
@@ -153,7 +152,7 @@ namespace { // Helpers for get_recalls()
 				if ( ufilt(recall_unit, map_location::null_location()) )
 				{
 					result.push_back(recall_unit_ptr);
-					if ( already_added != NULL )
+					if ( already_added != nullptr )
 						already_added->insert(underlying_id);
 				}
 			}
@@ -220,7 +219,7 @@ std::vector<unit_const_ptr > get_recalls(int side, const map_location &recall_lo
 	if ( !leader_in_place )
 	{
 		// Return the full recall list.
-		BOOST_FOREACH(const unit_const_ptr & recall, (*resources::teams)[side-1].recall_list())
+		for (const unit_const_ptr & recall : (*resources::teams)[side-1].recall_list())
 		{
 			result.push_back(recall);
 		}
@@ -659,7 +658,7 @@ place_recruit_result place_recruit(unit_ptr u, const map_location &recruit_locat
 	}
 	// Make sure the unit appears (if either !show or the animation is suppressed).
 	new_unit_itor->set_hidden(false);
-	if ( resources::screen != NULL ) {
+	if ( resources::screen != nullptr ) {
 		resources::screen->invalidate(current_loc);
 		resources::screen->redraw_minimap();
 	}
@@ -720,7 +719,7 @@ void recruit_unit(const unit_type & u_type, int side_num, const map_location & l
 	}
 
 	// Update the screen.
-	if ( resources::screen != NULL )
+	if ( resources::screen != nullptr )
 		resources::screen->invalidate_game_status();
 		// Other updates were done by place_recruit().
 }
@@ -767,7 +766,7 @@ bool recall_unit(const std::string & id, team & current_team,
 	}
 
 	// Update the screen.
-	if ( resources::screen != NULL )
+	if ( resources::screen != nullptr )
 		resources::screen->invalidate_game_status();
 		// Other updates were done by place_recruit().
 

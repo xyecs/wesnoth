@@ -587,7 +587,7 @@ bool variant::as_bool() const
 	case TYPE_DECIMAL:
 		return decimal_value_ != 0;
 	case TYPE_CALLABLE:
-		return callable_ != NULL;
+		return callable_ != nullptr;
 	case TYPE_LIST:
 		return !list_->elements.empty();
 	case TYPE_MAP:
@@ -1049,7 +1049,7 @@ void variant::serialize_to_string(std::string& str) const
 		str += "null()";
 		break;
 	case TYPE_INT:
-		str += boost::lexical_cast<std::string>(int_value_);
+		str += std::to_string(int_value_);
 		break;
 	case TYPE_DECIMAL: {
 		std::ostringstream s;
@@ -1168,7 +1168,7 @@ std::string variant::string_cast() const
 	case TYPE_NULL:
 		return "0";
 	case TYPE_INT:
-		return boost::lexical_cast<std::string>(int_value_);
+		return std::to_string(int_value_);
 	case TYPE_DECIMAL: {
 		std::ostringstream s;
 

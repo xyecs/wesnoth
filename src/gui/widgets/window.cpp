@@ -59,12 +59,11 @@
 #include "sdl/rect.hpp"
 #include "sdl/utils.hpp"
 #include "tstring.hpp"
-#include "utils/foreach.hpp"
 #include "formula/variant.hpp"
 #include "video.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace game_logic { class function_symbol_table; }
 namespace gui2 { class tbutton; }
@@ -97,7 +96,7 @@ public:
 
 	twidget* build() const
 	{
-		return NULL;
+		return nullptr;
 	}
 };
 
@@ -116,7 +115,6 @@ const unsigned LAYOUT = tdebug_layout_graph::LAYOUT;
 const unsigned SHOW = 0;
 const unsigned LAYOUT = 0;
 #endif
-
 
 /**
  * SDL_AddTimer() callback for delay_event.
@@ -159,8 +157,8 @@ static bool helptip()
 
 	data.type = SHOW_HELPTIP_EVENT;
 	data.code = 0;
-	data.data1 = NULL;
-	data.data2 = NULL;
+	data.data1 = nullptr;
+	data.data2 = nullptr;
 
 	event.type = SHOW_HELPTIP_EVENT;
 	event.user = data;
@@ -248,7 +246,7 @@ twindow* tmanager::window(const unsigned id)
 	std::map<unsigned, twindow*>::iterator itor = windows_.find(id);
 
 	if(itor == windows_.end()) {
-		return NULL;
+		return nullptr;
 	} else {
 		return itor->second;
 	}
@@ -318,16 +316,16 @@ twindow::twindow(CVideo& video,
 
 	connect();
 
-	connect_signal<event::DRAW>(boost::bind(&twindow::draw, this));
+	connect_signal<event::DRAW>(std::bind(&twindow::draw, this));
 
-	connect_signal<event::SDL_VIDEO_RESIZE>(boost::bind(
+	connect_signal<event::SDL_VIDEO_RESIZE>(std::bind(
 			&twindow::signal_handler_sdl_video_resize, this, _2, _3, _5));
 
-	connect_signal<event::SDL_ACTIVATE>(boost::bind(
+	connect_signal<event::SDL_ACTIVATE>(std::bind(
 			&event::tdistributor::initialize_state, event_distributor_));
 
 	connect_signal<event::SDL_LEFT_BUTTON_UP>(
-			boost::bind(&twindow::signal_handler_click_dismiss,
+			std::bind(&twindow::signal_handler_click_dismiss,
 						this,
 						_2,
 						_3,
@@ -335,7 +333,7 @@ twindow::twindow(CVideo& video,
 						SDL_BUTTON_LMASK),
 			event::tdispatcher::front_child);
 	connect_signal<event::SDL_MIDDLE_BUTTON_UP>(
-			boost::bind(&twindow::signal_handler_click_dismiss,
+			std::bind(&twindow::signal_handler_click_dismiss,
 						this,
 						_2,
 						_3,
@@ -343,7 +341,7 @@ twindow::twindow(CVideo& video,
 						SDL_BUTTON_MMASK),
 			event::tdispatcher::front_child);
 	connect_signal<event::SDL_RIGHT_BUTTON_UP>(
-			boost::bind(&twindow::signal_handler_click_dismiss,
+			std::bind(&twindow::signal_handler_click_dismiss,
 						this,
 						_2,
 						_3,
@@ -352,14 +350,14 @@ twindow::twindow(CVideo& video,
 			event::tdispatcher::front_child);
 
 	connect_signal<event::SDL_KEY_DOWN>(
-			boost::bind(
+			std::bind(
 					&twindow::signal_handler_sdl_key_down, this, _2, _3, _5),
 			event::tdispatcher::back_pre_child);
-	connect_signal<event::SDL_KEY_DOWN>(boost::bind(
+	connect_signal<event::SDL_KEY_DOWN>(std::bind(
 			&twindow::signal_handler_sdl_key_down, this, _2, _3, _5));
 
 	connect_signal<event::MESSAGE_SHOW_TOOLTIP>(
-			boost::bind(&twindow::signal_handler_message_show_tooltip,
+			std::bind(&twindow::signal_handler_message_show_tooltip,
 						this,
 						_2,
 						_3,
@@ -367,7 +365,7 @@ twindow::twindow(CVideo& video,
 			event::tdispatcher::back_pre_child);
 
 	connect_signal<event::MESSAGE_SHOW_HELPTIP>(
-			boost::bind(&twindow::signal_handler_message_show_helptip,
+			std::bind(&twindow::signal_handler_message_show_helptip,
 						this,
 						_2,
 						_3,
@@ -375,11 +373,11 @@ twindow::twindow(CVideo& video,
 			event::tdispatcher::back_pre_child);
 
 	connect_signal<event::REQUEST_PLACEMENT>(
-			boost::bind(
+			std::bind(
 					&twindow::signal_handler_request_placement, this, _2, _3),
 			event::tdispatcher::back_pre_child);
 
-	register_hotkey(hotkey::GLOBAL__HELPTIP, boost::bind(gui2::helptip));
+	register_hotkey(hotkey::GLOBAL__HELPTIP, std::bind(gui2::helptip));
 }
 
 twindow::~twindow()
@@ -552,6 +550,8 @@ void twindow::show_non_modal(/*const unsigned auto_close_timeout*/)
 	 */
 	invalidate_layout();
 	suspend_drawing_ = false;
+
+	events::pump();
 }
 
 int twindow::show(const bool restore, const unsigned auto_close_timeout)
@@ -564,8 +564,6 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 
 	show_mode_ = modal;
 	restore_ = restore;
-
-
 
 	log_scope2(log_gui_draw, LOG_SCOPE_HEADER);
 
@@ -591,8 +589,8 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 
 		data.type = CLOSE_WINDOW_EVENT;
 		data.code = tmanager::instance().get_id(*this);
-		data.data1 = NULL;
-		data.data2 = NULL;
+		data.data1 = nullptr;
+		data.data2 = nullptr;
 
 		event.type = CLOSE_WINDOW_EVENT;
 		event.user = data;
@@ -621,7 +619,7 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 				 * return the proper button state. When initializing here all
 				 * works fine.
 				 */
-				mouse_button_state_ = SDL_GetMouseState(NULL, NULL);
+				mouse_button_state_ = SDL_GetMouseState(nullptr, nullptr);
 				mouse_button_state_initialised = true;
 			}
 
@@ -748,7 +746,7 @@ void twindow::draw()
 		return;
 	}
 
-	FOREACH(AUTO & item, dirty_list_)
+	for(auto & item : dirty_list_)
 	{
 
 		assert(!item.empty());
@@ -975,7 +973,7 @@ void twindow::layout()
 			: h_(variables_, &functions_);
 
 	/***** Handle click dismiss status. *****/
-	tbutton* click_dismiss_button = NULL;
+	tbutton* click_dismiss_button = nullptr;
 	if((click_dismiss_button
 		= find_widget<tbutton>(this, "click_dismiss", false, false))) {
 
@@ -1025,7 +1023,7 @@ void twindow::layout()
 
 		connect_signal_mouse_left_click(
 				*click_dismiss_button,
-				boost::bind(&twindow::set_retval, this, OK, true));
+				std::bind(&twindow::set_retval, this, OK, true));
 
 		layout_initialise(true);
 		generate_dot_file("layout_initialise", LAYOUT);
@@ -1129,13 +1127,13 @@ void twindow::layout()
 void twindow::layout_linked_widgets()
 {
 	// evaluate the group sizes
-	FOREACH(AUTO & linked_size, linked_size_)
+	for(auto & linked_size : linked_size_)
 	{
 
 		tpoint max_size(0, 0);
 
 		// Determine the maximum size.
-		FOREACH(AUTO widget, linked_size.second.widgets)
+		for(auto widget : linked_size.second.widgets)
 		{
 
 			const tpoint size = widget->get_best_size();
@@ -1155,7 +1153,7 @@ void twindow::layout_linked_widgets()
 		}
 
 		// Set the maximum size.
-		FOREACH(AUTO widget, linked_size.second.widgets)
+		for(auto widget : linked_size.second.widgets)
 		{
 
 			tpoint size = widget->get_best_size();
@@ -1191,13 +1189,6 @@ const std::string& twindow::get_control_type() const
 	return type;
 }
 
-void twindow::draw(surface& /*surf*/,
-				   const bool /*force*/,
-				   const bool /*invalidate_background*/)
-{
-	assert(false);
-}
-
 namespace
 {
 
@@ -1215,7 +1206,7 @@ void swap_grid(tgrid* grid,
 	widget->set_id(id);
 
 	// Get the container containing the wanted widget.
-	tgrid* parent_grid = NULL;
+	tgrid* parent_grid = nullptr;
 	if(grid) {
 		parent_grid = find_widget<tgrid>(grid, id, false, false);
 	}
@@ -1242,7 +1233,7 @@ void swap_grid(tgrid* grid,
 
 void twindow::finalize(const boost::intrusive_ptr<tbuilder_grid>& content_grid)
 {
-	swap_grid(NULL, &grid(), content_grid->build(), "_window_content_grid");
+	swap_grid(nullptr, &grid(), content_grid->build(), "_window_content_grid");
 }
 
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
@@ -1468,7 +1459,7 @@ twindow_definition::twindow_definition(const config& cfg)
 }
 
 twindow_definition::tresolution::tresolution(const config& cfg)
-	: tpanel_definition::tresolution(cfg), grid(NULL)
+	: tpanel_definition::tresolution(cfg), grid(nullptr)
 {
 	const config& child = cfg.child("grid");
 	// VALIDATE(child, _("No grid defined."));

@@ -57,8 +57,6 @@
 #include "whiteboard/manager.hpp"
 #include "hotkey/hotkey_item.hpp"
 
-#include <boost/foreach.hpp>
-
 static lg::log_domain log_aitesting("aitesting");
 #define LOG_AIT LOG_STREAM(info, log_aitesting)
 //If necessary, this define can be replaced with `#define LOG_AIT std::cout` to restore previous behavior
@@ -94,8 +92,8 @@ playsingle_controller::playsingle_controller(const config& level,
 	ai::manager::set_ai_info(ai_info);
 	ai::manager::add_observer(this) ;
 
-	plugins_context_->set_accessor_string("level_result", boost::bind(&playsingle_controller::describe_result, this));
-	plugins_context_->set_accessor_int("turn", boost::bind(&play_controller::turn, this));
+	plugins_context_->set_accessor_string("level_result", std::bind(&playsingle_controller::describe_result, this));
+	plugins_context_->set_accessor_int("turn", std::bind(&play_controller::turn, this));
 }
 
 std::string playsingle_controller::describe_result() const
@@ -216,7 +214,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(const config& level)
 	LOG_NG << "in playsingle_controller::play_scenario()...\n";
 
 	// Start music.
-	BOOST_FOREACH(const config &m, level.child_range("music")) {
+	for(const config &m : level.child_range("music")) {
 		sound::play_music_config(m);
 	}
 	sound::commit_music_changes();
@@ -227,8 +225,8 @@ LEVEL_RESULT playsingle_controller::play_scenario(const config& level)
 	gui_->labels().read(level);
 
 	// Read sound sources
-	assert(soundsources_manager_ != NULL);
-	BOOST_FOREACH(const config &s, level.child_range("sound_source")) {
+	assert(soundsources_manager_ != nullptr);
+	for (const config &s : level.child_range("sound_source")) {
 		try {
 			soundsource::sourcespec spec(s);
 			soundsources_manager_->add(spec);
@@ -361,7 +359,7 @@ void playsingle_controller::play_side_impl()
 	if (!skip_next_turn_) {
 		end_turn_ = END_TURN_NONE;
 	}
-	if(replay_.get() != NULL) {
+	if(replay_.get() != nullptr) {
 		REPLAY_RETURN res = replay_->play_side_impl();
 		if(res == REPLAY_FOUND_END_TURN) {
 			end_turn_ = END_TURN_SYNCED;
@@ -519,7 +517,7 @@ void playsingle_controller::end_turn_enable(bool enable)
 void playsingle_controller::after_human_turn()
 {
 	// Clear moves from the GUI.
-	gui_->set_route(NULL);
+	gui_->set_route(nullptr);
 	gui_->unhighlight_reach();
 }
 
@@ -576,7 +574,7 @@ void playsingle_controller::play_ai_turn()
  */
 void playsingle_controller::do_idle_notification()
 {
-	gui_->get_chat_manager().add_chat_message(time(NULL), "Wesnoth", 0,
+	gui_->get_chat_manager().add_chat_message(time(nullptr), "Wesnoth", 0,
 		"This side is in an idle state. To proceed with the game, the host must assign it to another controller.",
 		events::chat_handler::MESSAGE_PUBLIC, false);
 }
@@ -673,7 +671,7 @@ void playsingle_controller::reset_replay()
 
 void playsingle_controller::enable_replay(bool is_unit_test)
 {
-	replay_.reset(new replay_controller(*this, gamestate().has_human_sides(), boost::shared_ptr<config>( new config(saved_game_.replay_start())), boost::bind(&playsingle_controller::on_replay_end, this, is_unit_test)));
+	replay_.reset(new replay_controller(*this, gamestate().has_human_sides(), boost::shared_ptr<config>( new config(saved_game_.replay_start())), std::bind(&playsingle_controller::on_replay_end, this, is_unit_test)));
 	if(is_unit_test) {
 		replay_->play_replay();
 	}

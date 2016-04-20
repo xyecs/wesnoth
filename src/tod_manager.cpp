@@ -29,18 +29,14 @@
 #include "network.hpp"
 #include "config_assign.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 static lg::log_domain log_engine("engine");
 #define LOG_NG LOG_STREAM(info, log_engine)
 
 tod_manager::tod_manager(const config& scenario_cfg):
-	savegame_config(),
 	currentTime_(0),
 	times_(),
 	areas_(),
@@ -314,7 +310,7 @@ void tod_manager::set_area_id(int area_index, const std::string& id) {
 std::vector<std::string> tod_manager::get_area_ids() const
 {
 	std::vector<std::string> areas;
-	BOOST_FOREACH(const area_time_of_day& area, areas_) {
+	for (const area_time_of_day& area : areas_) {
 		areas.push_back(area.id);
 	}
 	return areas;
@@ -322,7 +318,7 @@ std::vector<std::string> tod_manager::get_area_ids() const
 
 const std::set<map_location>& tod_manager::get_area_by_id(const std::string& id) const
 {
-	BOOST_FOREACH(const area_time_of_day& area, areas_) {
+	for (const area_time_of_day& area : areas_) {
 		if (area.id == id)
 			return area.hexes;
 	}
@@ -451,7 +447,7 @@ void tod_manager::set_turn_by_wml(const int num, game_data* vars, const bool inc
 void tod_manager::set_new_current_times(const int new_current_turn_number)
 {
 	set_current_time(calculate_current_time(times_.size(), new_current_turn_number, currentTime_));
-	BOOST_FOREACH(area_time_of_day& area, areas_) {
+	for (area_time_of_day& area : areas_) {
 		set_current_time(calculate_current_time(
 			area.times.size(),
 			new_current_turn_number,
@@ -484,6 +480,13 @@ void tod_manager::set_current_time(int time) {
 void tod_manager::set_current_time(int time, int area_index) {
 	assert(area_index < static_cast<int>(areas_.size()));
 	set_current_time(time, areas_[area_index]);
+}
+
+void tod_manager::set_current_time(int time, const std::string& area_id) {
+	for (area_time_of_day& area : areas_) {
+		if (area.id == area_id)
+			set_current_time(time, area);
+	}
 }
 
 void tod_manager::set_current_time(int time, area_time_of_day& area) {

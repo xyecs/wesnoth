@@ -30,8 +30,8 @@
 #include "units/unit.hpp"
 #include "units/filter.hpp"
 #include "variable.hpp"
-
-#include <boost/foreach.hpp>
+#include "formula/callable_objects.hpp"
+#include "formula/formula.hpp"
 
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
@@ -48,7 +48,7 @@ terrain_filter::~terrain_filter()
 #pragma warning(disable:4413)
 terrain_filter::terrain_filter():
 	cfg_(vconfig::unconstructed_vconfig()),
-	fc_(NULL),
+	fc_(nullptr),
 	cache_(),
 	max_loop_(),
 	flat_()
@@ -100,8 +100,8 @@ terrain_filter& terrain_filter::operator=(const terrain_filter& other)
 }
 
 terrain_filter::terrain_filter_cache::terrain_filter_cache() :
-	parsed_terrain(NULL),
-	adjacent_matches(NULL),
+	parsed_terrain(nullptr),
+	adjacent_matches(nullptr),
 	adjacent_match_cache(),
 	ufilter_()
 {}
@@ -122,7 +122,7 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 		return false;
 
 	if(cfg_.has_attribute("terrain")) {
-		if(cache_.parsed_terrain == NULL) {
+		if(cache_.parsed_terrain == nullptr) {
 			cache_.parsed_terrain = new t_translation::t_match(cfg_["terrain"]);
 		}
 		if(!cache_.parsed_terrain->is_empty) {
@@ -146,8 +146,8 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 					variable_access_const vi = gd->get_variable_access_read(cfg_["find_in"]);
 
 					bool found = false;
-					BOOST_FOREACH(const config &cfg, vi.as_array()) {
-						if (map_location(cfg, NULL) == loc) {
+					for (const config &cfg : vi.as_array()) {
+						if (map_location(cfg, nullptr) == loc) {
 							found = true;
 							break;
 						}
@@ -185,7 +185,7 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 			std::vector<int> sides = ssf.get_teams();
 
 			bool found = false;
-			BOOST_FOREACH(const int side, sides) {
+			for (const int side : sides) {
 				const team &viewing_team = fc_->get_disp_context().teams().at(side - 1);
 				bool viewer_sees = respect_fog ? !viewing_team.fogged(loc) : !viewing_team.shrouded(loc);
 				if (visible == viewer_sees) {
@@ -212,7 +212,7 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 			for (j = dirs.begin(); j != j_end; ++j) {
 				map_location &adj = adjacent[*j];
 				if (fc_->get_disp_context().map().on_board(adj)) {
-					if(cache_.adjacent_matches == NULL) {
+					if(cache_.adjacent_matches == nullptr) {
 						while(index >= std::distance(cache_.adjacent_match_cache.begin(), cache_.adjacent_match_cache.end())) {
 							const vconfig& adj_cfg = adj_cfgs[cache_.adjacent_match_cache.size()];
 							std::pair<terrain_filter, std::map<map_location,bool> > amc_pair(
@@ -268,14 +268,14 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 		if(!tod_type.empty()) {
 			const std::vector<std::string>& vals = utils::split(tod_type);
 			if(tod.lawful_bonus<0) {
-				if(std::find(vals.begin(),vals.end(),lexical_cast<std::string>(unit_type::ALIGNMENT::CHAOTIC)) == vals.end()) {
+				if(std::find(vals.begin(),vals.end(),std::to_string(unit_type::ALIGNMENT::CHAOTIC)) == vals.end()) {
 					return false;
 				}
 			} else if(tod.lawful_bonus>0) {
-				if(std::find(vals.begin(),vals.end(),lexical_cast<std::string>(unit_type::ALIGNMENT::LAWFUL)) == vals.end()) {
+				if(std::find(vals.begin(),vals.end(),std::to_string(unit_type::ALIGNMENT::LAWFUL)) == vals.end()) {
 					return false;
 				}
-			} else if(std::find(vals.begin(),vals.end(),lexical_cast<std::string>(unit_type::ALIGNMENT::NEUTRAL)) == vals.end()) {
+			} else if(std::find(vals.begin(),vals.end(),std::to_string(unit_type::ALIGNMENT::NEUTRAL)) == vals.end()) {
 				return false;
 			}
 		}
@@ -310,7 +310,7 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 		bool found = false;
 		if(sides.empty() && fc_->get_disp_context().village_owner(loc) == -1)
 			found = true;
-		BOOST_FOREACH(const int side, sides) {
+		for(const int side : sides) {
 			if(fc_->get_disp_context().teams().at(side - 1).owns_village(loc)) {
 				found = true;
 				break;
@@ -322,6 +322,24 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 	else if(!owner_side.empty()) {
 		const int side_index = owner_side.to_int(0) - 1;
 		if(fc_->get_disp_context().village_owner(loc) != side_index) {
+			return false;
+		}
+	}
+	
+	if(cfg_.has_attribute("formula")) {
+		try {
+			const gamemap& map = fc_->get_disp_context().map();
+			t_translation::t_terrain t = map.get_terrain(loc);
+			const terrain_type& ter = map.tdata()->get_terrain_info(t);
+			const terrain_callable callable(ter,loc);
+			const game_logic::formula form(cfg_["formula"]);
+			if(!form.evaluate(callable).as_bool()) {
+				return false;
+			}
+			return true;
+		} catch(game_logic::formula_error& e) {
+			lg::wml_error() << "Formula error in location filter: " << e.type << " at " << e.filename << ':' << e.line << ")\n";
+			// Formulae with syntax errors match nothing
 			return false;
 		}
 	}
@@ -441,9 +459,9 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 			try
 			{
 				variable_access_const vi = gd->get_variable_access_read(cfg_["find_in"]);
-				BOOST_FOREACH(const config& cfg, vi.as_array())
+				for (const config& cfg : vi.as_array())
 				{
-					map_location test_loc(cfg, NULL);
+					map_location test_loc(cfg, nullptr);
 					match_set.insert(test_loc);
 				}
 			}
@@ -478,9 +496,9 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 			{
 				std::set<map_location> findin_locs;
 				variable_access_const vi = gd->get_variable_access_read(cfg_["find_in"]);
-				BOOST_FOREACH(const config& cfg, vi.as_array())
+				for (const config& cfg : vi.as_array())
 				{
-					map_location test_loc(cfg, NULL);
+					map_location test_loc(cfg, nullptr);
 					if (match_set.count(test_loc)) {
 						findin_locs.insert(test_loc);
 					}
@@ -503,7 +521,7 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 		xy_vector = fc_->get_disp_context().map().parse_location_range(cfg_["x"], cfg_["y"], with_border);
 		const std::set<map_location>& area = fc_->get_tod_man().get_area_by_id(cfg_["area"]);
 
-		BOOST_FOREACH(const map_location& loc, xy_vector) {
+		for (const map_location& loc : xy_vector) {
 			if (area.count(loc) != 0)
 				match_set.insert(loc);
 		}
@@ -522,9 +540,9 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 			try
 			{
 				variable_access_const vi = gd->get_variable_access_read(cfg_["find_in"]);
-				BOOST_FOREACH(const config& cfg, vi.as_array())
+				for (const config& cfg : vi.as_array())
 				{
-					map_location test_loc(cfg, NULL);
+					map_location test_loc(cfg, nullptr);
 					if (area.count(test_loc) != 0)
 						match_set.insert(test_loc);
 				}
@@ -553,8 +571,8 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 			{
 				variable_access_const vi = gd->get_variable_access_read(cfg_["find_in"]);
 
-				BOOST_FOREACH(const config &cfg, vi.as_array()) {
-					map_location test_loc(cfg, NULL);
+				for (const config &cfg : vi.as_array()) {
+					map_location test_loc(cfg, nullptr);
 					if (area.count(test_loc) != 0 && xy_set.count(test_loc) != 0)
 						match_set.insert(test_loc);
 				}
@@ -568,7 +586,7 @@ void terrain_filter::get_locations(std::set<map_location>& locs, bool with_borde
 
 	//handle location filter
 	if(cfg_.has_child("filter_adjacent_location")) {
-		if(cache_.adjacent_matches == NULL) {
+		if(cache_.adjacent_matches == nullptr) {
 			cache_.adjacent_matches = new std::vector<std::set<map_location> >();
 		}
 		const vconfig::child_list& adj_cfgs = cfg_.get_children("filter_adjacent_location");

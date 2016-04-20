@@ -17,8 +17,6 @@
 #include "events.hpp"
 #include "gui/core/log.hpp"
 
-#include <boost/static_assert.hpp>
-
 #include <SDL_timer.h>
 
 #include <map>
@@ -34,7 +32,7 @@ struct ttimer
 
 	SDL_TimerID sdl_id;
 	Uint32 interval;
-	boost::function<void(size_t id)> callback;
+	std::function<void(size_t id)> callback;
 };
 
 /** Ids for the timers. */
@@ -99,7 +97,7 @@ static Uint32 timer_callback(Uint32, void* id)
 	data.type = TIMER_EVENT;
 	data.code = 0;
 	data.data1 = id;
-	data.data2 = NULL;
+	data.data2 = nullptr;
 
 	event.type = TIMER_EVENT;
 	event.user = data;
@@ -112,10 +110,10 @@ static Uint32 timer_callback(Uint32, void* id)
 } // extern "C"
 
 size_t add_timer(const Uint32 interval,
-				 const boost::function<void(size_t id)>& callback,
+				 const std::function<void(size_t id)>& callback,
 				 const bool repeat)
 {
-	BOOST_STATIC_ASSERT(sizeof(size_t) == sizeof(void*));
+	static_assert(sizeof(size_t) == sizeof(void*), "Pointer and size_t are not the same size");
 
 	DBG_GUI_E << "Adding timer.\n";
 

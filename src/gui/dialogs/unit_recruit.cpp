@@ -36,9 +36,7 @@
 #include "units/types.hpp"
 #include "whiteboard/manager.hpp"
 
-#include "utils/foreach.hpp"
-
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -63,9 +61,9 @@ void tunit_recruit::pre_show(twindow& window)
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 	connect_signal_notify_modified(*list,
-		boost::bind(&tunit_recruit::list_item_clicked,
+		std::bind(&tunit_recruit::list_item_clicked,
 		*this,
-		boost::ref(window)));
+		std::ref(window)));
 #else
 	list.set_callback_value_change(
 		dialog_callback<tunit_recruit, &tunit_recruit::list_item_clicked>);
@@ -73,9 +71,9 @@ void tunit_recruit::pre_show(twindow& window)
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "show_help", false),
-		boost::bind(&tunit_recruit::show_help, this, boost::ref(window)));
+		std::bind(&tunit_recruit::show_help, this, std::ref(window)));
 
-	FOREACH(const AUTO& recruit, recruit_list_)
+	for(const auto& recruit : recruit_list_)
 	{
 		std::map<std::string, string_map> row_data;
 		string_map column;
@@ -93,7 +91,7 @@ void tunit_recruit::pre_show(twindow& window)
 
 		const bool can_afford = recruit->cost() < team_.gold() - wb_gold;
 
-		const std::string cost_string = lexical_cast<std::string>(recruit->cost());
+		const std::string cost_string = std::to_string(recruit->cost());
 
 		column["label"] = image_string;
 		row_data.insert(std::make_pair("unit_image", column));

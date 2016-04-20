@@ -36,9 +36,6 @@
 #include "config_assign.hpp"
 #include "serialization/string_utils.hpp"
 
-#include <boost/foreach.hpp>
-#include <boost/assign/list_of.hpp>
-
 static lg::log_domain log_engine("engine");
 #define DBG_NG LOG_STREAM(debug, log_engine)
 #define LOG_NG LOG_STREAM(info, log_engine)
@@ -279,7 +276,6 @@ void team::team_info::write(config& cfg) const
 }
 
 team::team() :
-	savegame_config(),
 	gold_(0),
 	villages_(),
 	shroud_(),
@@ -330,11 +326,11 @@ void team::build(const config &cfg, const gamemap& map, int gold)
 	if (gold_ != info_.gold)
 		info_.start_gold = gold;
 	// Old code was doing:
-	// info_.start_gold = str_cast(gold) + " (" + info_.start_gold + ")";
+	// info_.start_gold = std::to_string(gold) + " (" + info_.start_gold + ")";
 	// Was it correct?
 
 	// Load in the villages the side controls at the start
-	BOOST_FOREACH(const config &v, cfg.child_range("village"))
+	for (const config &v : cfg.child_range("village"))
 	{
 		map_location loc(v);
 		if (map.is_village(loc)) {
@@ -422,7 +418,7 @@ int team::minimum_recruit_price() const
 		return info_.minimum_recruit_price;
 	}else{
 		int min = 20;
-		BOOST_FOREACH(std::string recruit, info_.can_recruit){
+		for(std::string recruit : info_.can_recruit) {
 			const unit_type *ut = unit_types.find(recruit);
 			if(!ut)
 				continue;
@@ -439,7 +435,7 @@ int team::minimum_recruit_price() const
 
 bool team::calculate_enemies(size_t index) const
 {
-	if(teams == NULL || index >= teams->size()) {
+	if(teams == nullptr || index >= teams->size()) {
 		return false;
 	}
 
@@ -547,7 +543,7 @@ void team::change_team(const std::string &name, const t_string &user_name)
 
 void team::clear_caches(){
 	// Reset the cache of allies for all teams
-	if(teams != NULL) {
+	if(teams != nullptr) {
 		for(std::vector<team>::const_iterator i = teams->begin(); i != teams->end(); ++i) {
 			i->enemies_.clear();
 			i->ally_shroud_.clear();
@@ -655,12 +651,12 @@ void team::remove_fog_override(const std::set<map_location> &hexes)
 
 void validate_side(int side)
 {
-	if(teams == NULL) {
+	if(teams == nullptr) {
 		return;
 	}
 
 	if(side < 1 || side > int(teams->size())) {
-		throw game::game_error("invalid side(" + str_cast(side) + ") found in unit definition");
+		throw game::game_error("invalid side(" + std::to_string(side) + ") found in unit definition");
 	}
 }
 
@@ -735,7 +731,7 @@ bool team::shroud_map::shared_value(const std::vector<const shroud_map*>& maps, 
 		return true;
 
 	// A tile is uncovered if it is uncovered on any shared map.
-	BOOST_FOREACH(const shroud_map * const shared_map, maps) {
+	for (const shroud_map * const shared_map : maps) {
 		if ( shared_map->enabled_  &&  !shared_map->value(x,y) )
 			return false;
 	}
@@ -840,13 +836,13 @@ std::string team::get_side_color_index(int side)
 {
 	size_t index = size_t(side-1);
 
-	if(teams != NULL && index < teams->size()) {
+	if(teams != nullptr && index < teams->size()) {
 		const std::string side_map = (*teams)[index].color();
 		if(!side_map.empty()) {
 			return side_map;
 		}
 	}
-	return str_cast(side);
+	return std::to_string(side);
 }
 
 std::string team::get_side_highlight(int side)
@@ -879,7 +875,7 @@ config team::to_config() const
 std::string team::allied_human_teams() const
 {
 	std::vector<int> res;
-	BOOST_FOREACH(const team& t, *teams)
+	for(const team& t : *teams)
 	{
 		if(!t.is_enemy(this->side()) && t.is_human()) {
 			res.push_back(t.side());

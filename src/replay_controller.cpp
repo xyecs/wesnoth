@@ -23,7 +23,6 @@
 #include "config_assign.hpp"
 #include "playsingle_controller.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 
 static lg::log_domain log_engine("engine");
@@ -68,7 +67,7 @@ struct replay_play_side : public replay_controller::replay_stop_condition
 };
 }
 
-replay_controller::replay_controller(play_controller& controller, bool control_view, const boost::shared_ptr<config>& reset_state, const boost::function<void()>& on_end_replay)
+replay_controller::replay_controller(play_controller& controller, bool control_view, const boost::shared_ptr<config>& reset_state, const std::function<void()>& on_end_replay)
 	: controller_(controller)
 	, stop_condition_(new replay_stop_condition())
 	, disabler_()

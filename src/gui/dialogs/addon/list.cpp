@@ -41,7 +41,6 @@
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/window.hpp"
-#include "utils/foreach.hpp"
 #include "serialization/string_utils.hpp"
 #include "formula/string_utils.hpp"
 #include "marked-up_text.hpp"
@@ -51,8 +50,9 @@
 
 #include "config.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 #include <sstream>
+#include <stdexcept>
 
 namespace gui2
 {
@@ -113,10 +113,10 @@ namespace {
 		filter_transform(const std::vector<std::string>& filtertext) : filtertext_(filtertext) {}
 		bool operator()(const config& cfg) const
 		{
-			FOREACH(const AUTO& filter, filtertext_)
+			for(const auto& filter : filtertext_)
 			{
 				bool found = false;
-				FOREACH(const AUTO& attribute, cfg.attribute_range())
+				for(const auto& attribute : cfg.attribute_range())
 				{
 					std::string val = attribute.second.str();
 					if(std::search(val.begin(),
@@ -189,7 +189,7 @@ void taddon_list::on_filtertext_changed(ttext_* textbox, const std::string& text
 	filter_transform filter(utils::split(text, ' '));
 	std::vector<bool> res;
 	res.reserve(cfg_.child_count("campaign"));
-	FOREACH(const AUTO& child, cfg_.child_range("campaign"))
+	for(const auto& child : cfg_.child_range("campaign"))
 	{
 		res.push_back(filter(child));
 	}
@@ -199,7 +199,7 @@ void taddon_list::on_filtertext_changed(ttext_* textbox, const std::string& text
 void taddon_list::on_order_button_click(twindow& window, const tgenerator_::torder_func& up, const tgenerator_::torder_func& down, twidget& w)
 {
 	tselectable_& selectable = dynamic_cast<tselectable_&>(w);
-	FOREACH(AUTO& other, orders_)
+	for(auto& other : orders_)
 	{
 		if(other != &selectable) {
 			other->set_value(0);
@@ -224,22 +224,22 @@ void taddon_list::register_sort_button(twindow& window, const std::string& id, c
 {
 	tselectable_& selectable = find_widget<tselectable_>(&window, id, true);
 	orders_.push_back(&selectable);
-	selectable.set_callback_state_change(boost::bind(&taddon_list::on_order_button_click, this, boost::ref(window), up, down, _1));
+	selectable.set_callback_state_change(std::bind(&taddon_list::on_order_button_click, this, std::ref(window), up, down, _1));
 }
 
 void taddon_list::register_sort_button_alphabetical(twindow& window, const std::string& id, const std::string& prop_id)
 {
 	register_sort_button(window, id,
-		boost::bind(&str_up,   &cfg_, prop_id, _1, _2),
-		boost::bind(&str_down, &cfg_, prop_id, _1, _2)
+		std::bind(&str_up,   &cfg_, prop_id, _1, _2),
+		std::bind(&str_down, &cfg_, prop_id, _1, _2)
 	);
 }
 
 void taddon_list::register_sort_button_numeric(twindow& window, const std::string& id, const std::string& prop_id)
 {
 	register_sort_button(window, id,
-		boost::bind(&num_up,   &cfg_, prop_id, _1, _2),
-		boost::bind(&num_down, &cfg_, prop_id, _1, _2)
+		std::bind(&num_up,   &cfg_, prop_id, _1, _2),
+		std::bind(&num_down, &cfg_, prop_id, _1, _2)
 	);
 }
 
@@ -379,7 +379,7 @@ void taddon_list::pre_show(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "addons", false);
 
-	FOREACH(const AUTO & c, cfg_.child_range("campaign"))
+	for(const auto & c : cfg_.child_range("campaign"))
 	{
 		ids_.push_back(c["name"]);
 		const addon_info& info = addon_at(ids_.back(), addons_);
@@ -407,7 +407,7 @@ void taddon_list::pre_show(twindow& window)
 		item["label"] = size_display_string(info.size);
 		data.insert(std::make_pair("size", item));
 
-		item["label"] = lexical_cast<std::string>(info.downloads);
+		item["label"] = std::to_string(info.downloads);
 		data.insert(std::make_pair("downloads", item));
 
 		item["label"] = info.display_type();
@@ -423,13 +423,13 @@ void taddon_list::pre_show(twindow& window)
 	register_sort_button_numeric(window, "sort_size", "size");
 
 	find_widget<ttext_box>(&window, "filter", false).set_text_changed_callback(
-		boost::bind(&taddon_list::on_filtertext_changed, this, _1, _2));
+		std::bind(&taddon_list::on_filtertext_changed, this, _1, _2));
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 	connect_signal_notify_modified(list,
-			boost::bind(&taddon_list::on_addon_select,
+			std::bind(&taddon_list::on_addon_select,
 			*this,
-			boost::ref(window)));
+			std::ref(window)));
 #else
 	list.set_callback_value_change(
 			dialog_callback<taddon_list, &taddon_list::on_addon_select>);
@@ -454,11 +454,11 @@ void taddon_list::pre_show(twindow& window)
 
 	connect_signal_mouse_left_click(
 			url_go_button,
-			boost::bind(&taddon_list::browse_url_callback, this, boost::ref(url_textbox)));
+			std::bind(&taddon_list::browse_url_callback, this, std::ref(url_textbox)));
 
 	connect_signal_mouse_left_click(
 			url_copy_button,
-			boost::bind(&taddon_list::copy_url_callback, this, boost::ref(url_textbox)));
+			std::bind(&taddon_list::copy_url_callback, this, std::ref(url_textbox)));
 
 	on_addon_select(window);
 }
@@ -516,7 +516,7 @@ void taddon_list::on_addon_select(twindow& window)
 	status.set_use_markup(true);
 
 	find_widget<tcontrol>(&window, "size", false).set_label(size_display_string(info.size));
-	find_widget<tcontrol>(&window, "downloads", false).set_label(lexical_cast<std::string>(info.downloads));
+	find_widget<tcontrol>(&window, "downloads", false).set_label(std::to_string(info.downloads));
 	find_widget<tcontrol>(&window, "created", false).set_label(format_addon_time(info.created));
 	find_widget<tcontrol>(&window, "updated", false).set_label(format_addon_time(info.updated));
 

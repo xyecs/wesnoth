@@ -29,7 +29,7 @@
 
 #include "gettext.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace
 {
@@ -50,7 +50,7 @@ std::string format_file_list(const std::vector<std::string>& files_original)
 	const std::string& addons_path = filesystem::get_addons_dir();
 	std::vector<std::string> files(files_original);
 
-	BOOST_FOREACH(std::string & file, files)
+	for(std::string & file : files)
 	{
 		std::string base;
 		std::string filename = filesystem::base_name(file);
@@ -219,7 +219,7 @@ void twml_error::pre_show(twindow& window)
 	tbutton& copy_button = find_widget<tbutton>(&window, "copy", false);
 
 	connect_signal_mouse_left_click(
-			copy_button, boost::bind(&twml_error::copy_report_callback, this));
+			copy_button, std::bind(&twml_error::copy_report_callback, this));
 
 	if (!desktop::clipboard::available()) {
 		copy_button.set_active(false);

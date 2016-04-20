@@ -21,10 +21,10 @@
 #include "random_new.hpp"
 #include "serialization/string_utils.hpp"
 
-#include <boost/foreach.hpp>
-
 namespace game_logic
 {
+
+const char*const formula::id_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 
 void formula_callable::set_value(const std::string& key, const variant& /*value*/)
 {
@@ -123,7 +123,7 @@ private:
 		std::stringstream s;
 		s << '[';
 		bool first_item = true;
-		BOOST_FOREACH(expression_ptr a , items_) {
+		for(expression_ptr a : items_) {
 			if (!first_item) {
 				s << ',';
 			} else {
@@ -236,7 +236,7 @@ public:
 			return variant(string_.as_string().empty());
 		} else if(key == "char" || key == "chars") {
 			std::vector<variant> chars;
-			BOOST_FOREACH(char c , string_.as_string()) {
+			for(char c : string_.as_string()) {
 				chars.push_back(variant(std::string(1, c)));
 			}
 			return variant(&chars);
@@ -255,7 +255,7 @@ public:
 			std::vector<std::string> split = utils::parenthetical_split(string_.as_string(), ',');
 			std::vector<variant> items;
 			items.reserve(split.size());
-			BOOST_FOREACH(const std::string s , split) {
+			for(const std::string s : split) {
 				items.push_back(variant(s));
 			}
 			return variant(&items);
@@ -320,7 +320,7 @@ public:
 			}
 			std::string key = key_variant.as_string();
 			bool valid = true;
-			BOOST_FOREACH(char c , key) {
+			for(char c : key) {
 				if(!isalpha(c) && c != '_') {
 					valid = false;
 					break;
@@ -603,7 +603,7 @@ public:
 		std::stringstream s;
 		s << "{where:(";
 		s << body_->str();
-		BOOST_FOREACH(const expr_table::value_type &a, *clauses_) {
+		for(const expr_table::value_type &a : *clauses_) {
 			s << ", [" << a.first << "] -> ["<< a.second->str()<<"]";
 		}
 		s << ")}";
@@ -1016,13 +1016,14 @@ expression_ptr parse_expression(const token* i1, const token* i2, function_symbo
 				++i1;
 			}
 			const std::string precond = "";
-			if(symbols == NULL) {
+			if(symbols == nullptr) {
 				throw formula_error("Function symbol table required but not present", "",*i1->filename, i1->line_number);
 			}
-			symbols->add_formula_function(formula_name,
+			symbols->add_function(formula_name,
+				formula_function_ptr(new user_formula_function(formula_name,
 					const_formula_ptr(new formula(beg, i1, symbols)),
 					formula::create_optional_formula(precond, symbols),
-					args);
+					args)));
 			if((i1 == i2) || (i1 == (i2-1))) {
 				return expression_ptr(new function_list_expression(symbols));
 			}
@@ -1033,7 +1034,7 @@ expression_ptr parse_expression(const token* i1, const token* i2, function_symbo
 	}
 
 	int parens = 0;
-	const token* op = NULL;
+	const token* op = nullptr;
 	bool operator_group = false;
 	for(const token* i = i1; i != i2; ++i) {
 		if(i->type == TOKEN_LPARENS || i->type == TOKEN_LSQUARE) {
@@ -1041,10 +1042,10 @@ expression_ptr parse_expression(const token* i1, const token* i2, function_symbo
 		} else if(i->type == TOKEN_RPARENS || i->type == TOKEN_RSQUARE) {
 			--parens;
 		} else if(parens == 0 && i->type == TOKEN_OPERATOR) {
-			if( ( !operator_group ) && (op == NULL || operator_precedence(*op) >=
+			if( ( !operator_group ) && (op == nullptr || operator_precedence(*op) >=
 							 operator_precedence(*i)) ) {
 				// Need special exception for exponentiation to be right-associative
-				if(*i->begin != '^' || op == NULL || *op->begin != '^')
+				if(*i->begin != '^' || op == nullptr || *op->begin != '^')
 					op = i;
 			}
 			operator_group = true;
@@ -1053,7 +1054,7 @@ expression_ptr parse_expression(const token* i1, const token* i2, function_symbo
 		}
 	}
 
-	if(op == NULL) {
+	if(op == nullptr) {
 		if(i1->type == TOKEN_LPARENS && (i2-1)->type == TOKEN_RPARENS) {
 			return parse_expression(i1+1,i2-1,symbols);
 		} else if( (i2-1)->type == TOKEN_RSQUARE) { //check if there is [ ] : either a list/map definition, or a operator
@@ -1219,11 +1220,11 @@ formula::formula(const std::string& str, function_symbol_table* symbols) :
 	expr_(),
 	str_(str),
 	symbols_(symbols),
-	managing_symbols(symbols == NULL)
+	managing_symbols(symbols == nullptr)
 {
 	using namespace formula_tokenizer;
 	
-	if(symbols == NULL) {
+	if(symbols == nullptr) {
 		symbols_ = new function_symbol_table;
 	}
 
@@ -1347,13 +1348,14 @@ formula::formula(const std::string& str, function_symbol_table* symbols) :
 		expr_ = expression_ptr(new null_expression());
 	}
 }
+
 formula::formula(const token* i1, const token* i2, function_symbol_table* symbols) :
 	expr_(),
 	str_(),
 	symbols_(symbols),
-	managing_symbols(symbols == NULL)
+	managing_symbols(symbols == nullptr)
 {
-	if(symbols == NULL) {
+	if(symbols == nullptr) {
 		symbols_ = new function_symbol_table;
 	}
 

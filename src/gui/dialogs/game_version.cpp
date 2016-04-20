@@ -45,7 +45,7 @@
 
 #include "gettext.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace
 {
@@ -143,13 +143,13 @@ void tgame_version::pre_show(twindow& window)
 	tbutton& copy_all = find_widget<tbutton>(&window, "copy_all", false);
 	connect_signal_mouse_left_click(
 			copy_all,
-			boost::bind(&tgame_version::report_copy_callback, this));
+			std::bind(&tgame_version::report_copy_callback, this));
 
 	//
 	// Game paths tab.
 	//
 
-	FOREACH(const AUTO & path_ent, path_map_)
+	for(const auto & path_ent : path_map_)
 	{
 		const std::string& path_id = path_ent.first;
 		const std::string& path_path = path_ent.second;
@@ -166,12 +166,12 @@ void tgame_version::pre_show(twindow& window)
 
 		connect_signal_mouse_left_click(
 				copy_w,
-				boost::bind(&tgame_version::copy_to_clipboard_callback,
+				std::bind(&tgame_version::copy_to_clipboard_callback,
 							this,
 							path_path));
 		connect_signal_mouse_left_click(
 				browse_w,
-				boost::bind(&tgame_version::browse_directory_callback,
+				std::bind(&tgame_version::browse_directory_callback,
 							this,
 							path_path));
 
@@ -196,7 +196,7 @@ void tgame_version::pre_show(twindow& window)
 			= find_widget<tbutton>(&window, "open_stderr", false);
 	connect_signal_mouse_left_click(
 			stderr_button,
-			boost::bind(&tgame_version::browse_directory_callback,
+			std::bind(&tgame_version::browse_directory_callback,
 						this,
 						log_path_));
 	stderr_button.set_active(!log_path_.empty());
@@ -211,7 +211,7 @@ void tgame_version::pre_show(twindow& window)
 	tlistbox& deps_listbox
 			= find_widget<tlistbox>(&window, "deps_listbox", false);
 
-	FOREACH(const AUTO & dep, deps_)
+	for(const auto & dep : deps_)
 	{
 		list_data["dep_name"]["label"] = dep[0];
 
@@ -239,7 +239,7 @@ void tgame_version::pre_show(twindow& window)
 	tlistbox& opts_listbox
 			= find_widget<tlistbox>(&window, "opts_listbox", false);
 
-	FOREACH(const AUTO & opt, opts_)
+	for(const auto & opt : opts_)
 	{
 		list_data["opt_name"]["label"] = opt.name;
 
@@ -285,9 +285,9 @@ void tgame_version::pre_show(twindow& window)
 	for(unsigned k = 0; k < tab_count; ++k) {
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 		connect_signal_notify_modified(tab_bar,
-									   boost::bind(&tgame_version::tab_switch_callback,
+									   std::bind(&tgame_version::tab_switch_callback,
 												   *this,
-												   boost::ref(window)));
+												   std::ref(window)));
 #else
 		tab_bar.set_callback_value_change(
 			dialog_callback<tgame_version, &tgame_version::tab_switch_callback>);

@@ -30,6 +30,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c++11" />
 			<Add option="-mthreads" />
 			<Add option="-fexceptions" />
 			<Add option="-fdiagnostics-show-option" />
@@ -72,6 +73,7 @@
 			<Add library="libboost_random-mgw51-mt-1_58.a" />
 			<Add library="libboost_regex-mgw51-mt-1_58.a" />
 			<Add library="libboost_system-mgw51-mt-1_58.a" />
+			<Add library="libboost_thread-mgw51-mt-1_58.a" />
 			<Add library="libboost_zlib-mgw51-mt-1_58.a" />
 			<Add directory="./" />
 		</Linker>
@@ -559,6 +561,8 @@
 		<Unit filename="../../src/gui/dialogs/label_settings.hpp" />
 		<Unit filename="../../src/gui/dialogs/language_selection.cpp" />
 		<Unit filename="../../src/gui/dialogs/language_selection.hpp" />
+		<Unit filename="../../src/gui/dialogs/loadscreen.cpp" />
+		<Unit filename="../../src/gui/dialogs/loadscreen.hpp" />
 		<Unit filename="../../src/gui/dialogs/lobby/data.cpp" />
 		<Unit filename="../../src/gui/dialogs/lobby/data.hpp" />
 		<Unit filename="../../src/gui/dialogs/lobby/info.cpp" />
@@ -740,8 +744,6 @@
 		<Unit filename="../../src/hotkey/hotkey_handler.hpp" />
 		<Unit filename="../../src/hotkey/hotkey_handler_mp.cpp" />
 		<Unit filename="../../src/hotkey/hotkey_handler_mp.hpp" />
-		<Unit filename="../../src/hotkey/hotkey_handler_replay.cpp" />
-		<Unit filename="../../src/hotkey/hotkey_handler_replay.hpp" />
 		<Unit filename="../../src/hotkey/hotkey_handler_sp.cpp" />
 		<Unit filename="../../src/hotkey/hotkey_handler_sp.hpp" />
 		<Unit filename="../../src/hotkey/hotkey_item.cpp" />
@@ -766,8 +768,6 @@
 		<Unit filename="../../src/leader_scroll_dialog.hpp" />
 		<Unit filename="../../src/lexical_cast.hpp" />
 		<Unit filename="../../src/libc_error.hpp" />
-		<Unit filename="../../src/loadscreen.cpp" />
-		<Unit filename="../../src/loadscreen.hpp" />
 		<Unit filename="../../src/lobby_preferences.cpp" />
 		<Unit filename="../../src/lobby_preferences.hpp" />
 		<Unit filename="../../src/log.cpp" />
@@ -894,7 +894,6 @@
 		<Unit filename="../../src/saved_game.hpp" />
 		<Unit filename="../../src/savegame.cpp" />
 		<Unit filename="../../src/savegame.hpp" />
-		<Unit filename="../../src/savegame_config.hpp" />
 		<Unit filename="../../src/scoped_resource.hpp" />
 		<Unit filename="../../src/scripting/application_lua_kernel.cpp" />
 		<Unit filename="../../src/scripting/application_lua_kernel.hpp" />
@@ -910,6 +909,8 @@
 		<Unit filename="../../src/scripting/lua_cpp_function.hpp" />
 		<Unit filename="../../src/scripting/lua_fileops.cpp" />
 		<Unit filename="../../src/scripting/lua_fileops.hpp" />
+		<Unit filename="../../src/scripting/lua_formula_bridge.cpp" />
+		<Unit filename="../../src/scripting/lua_formula_bridge.hpp" />
 		<Unit filename="../../src/scripting/lua_gui2.cpp" />
 		<Unit filename="../../src/scripting/lua_gui2.hpp" />
 		<Unit filename="../../src/scripting/lua_kernel_base.cpp" />
@@ -1062,9 +1063,11 @@
 		<Unit filename="../../src/units/unit.hpp" />
 		<Unit filename="../../src/util.cpp" />
 		<Unit filename="../../src/util.hpp" />
-		<Unit filename="../../src/utils/boost_function_guarded.hpp" />
 		<Unit filename="../../src/utils/const_clone.hpp" />
-		<Unit filename="../../src/utils/foreach.hpp" />
+		<Unit filename="../../src/utils/context_free_grammar_generator.cpp" />
+		<Unit filename="../../src/utils/context_free_grammar_generator.hpp" />
+		<Unit filename="../../src/utils/functional.hpp" />
+		<Unit filename="../../src/utils/iterable_pair.hpp" />
 		<Unit filename="../../src/utils/iterator.hpp" />
 		<Unit filename="../../src/utils/make_enum.cpp" />
 		<Unit filename="../../src/utils/make_enum.hpp" />

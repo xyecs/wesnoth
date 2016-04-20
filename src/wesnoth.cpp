@@ -33,12 +33,12 @@
 #include "gettext.hpp"
 #include "gui/core/event/handler.hpp"  // for tmanager
 #include "gui/dialogs/core_selection.hpp"  // for tcore_selection
+#include "gui/dialogs/loadscreen.hpp"
 #include "gui/dialogs/title_screen.hpp"  // for ttitle_screen, etc
 #include "gui/dialogs/message.hpp" 	// for show_error_message
 #include "gui/widgets/helper.hpp"       // for init
 #include "help/help.hpp"                     // for help_manager
 #include "image.hpp"                    // for flush_cache, etc
-#include "loadscreen.hpp"               // for loadscreen, etc
 #include "log.hpp"                      // for LOG_STREAM, general, logger, etc
 #include "network.hpp"			// for describe_versions
 #include "preferences.hpp"              // for core_id, etc
@@ -46,6 +46,7 @@
 #include "scripting/plugins/context.hpp"
 #include "scripting/plugins/manager.hpp"
 #include "sdl/exception.hpp"            // for texception
+#include "sdl/rect.hpp"
 #include "serialization/binary_or_text.hpp"  // for config_writer
 #include "serialization/parser.hpp"     // for read
 #include "serialization/preprocessor.hpp"  // for preproc_define, etc
@@ -72,8 +73,7 @@
 #endif // _MSC_VER
 
 #include <SDL.h>                        // for SDL_Init, SDL_INIT_TIMER
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>            // for auto_any_base, etc
+#include "utils/functional.hpp"
 #include <boost/iostreams/categories.hpp>  // for input, output
 #include <boost/iostreams/copy.hpp>     // for copy
 #include <boost/iostreams/filter/bzip2.hpp>  // for bzip2_compressor, etc
@@ -86,7 +86,7 @@
 
 #include <algorithm>                    // for transform
 #include <cerrno>                       // for ENOMEM
-#include <clocale>                      // for setlocale, NULL, LC_ALL, etc
+#include <clocale>                      // for setlocale, LC_ALL, etc
 #include <cstdio>                      // for remove, fprintf, stderr
 #include <cstdlib>                     // for srand, exit
 #include <ctime>                       // for time, ctime, time_t
@@ -231,7 +231,7 @@ static void handle_preprocess_command(const commandline_options& cmdline_opts)
 		int read = 0;
 
 		// use static preproc_define::read_pair(config) to make a object
-		BOOST_FOREACH( const config::any_child &value, cfg.all_children_range() ) {
+		for (const config::any_child &value : cfg.all_children_range()) {
 			const preproc_map::value_type def = preproc_define::read_pair( value.cfg );
 			input_macros[def.first] = def.second;
 			++read;
@@ -252,7 +252,7 @@ static void handle_preprocess_command(const commandline_options& cmdline_opts)
 	if ( cmdline_opts.preprocess_defines ) {
 
 		// add the specified defines
-		BOOST_FOREACH( const std::string &define, *cmdline_opts.preprocess_defines ) {
+		for (const std::string &define : *cmdline_opts.preprocess_defines) {
 			if (define.empty()){
 				std::cerr << "empty define supplied\n";
 				continue;
@@ -574,7 +574,7 @@ static void check_fpu()
  */
 static int do_gameloop(const std::vector<std::string>& args)
 {
-	srand(time(NULL));
+	srand(time(nullptr));
 
 	commandline_options cmdline_opts = commandline_options(args);
 	game_config::wesnoth_program_dir = filesystem::directory_name(args[0]);
@@ -642,52 +642,52 @@ static int do_gameloop(const std::vector<std::string>& args)
 	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 #endif
 
-	loadscreen::global_loadscreen_manager loadscreen_manager(game->video());
-
-	loadscreen::start_stage("init gui");
 	gui2::init();
 	const gui2::event::tmanager gui_event_manager;
 
 	game_config_manager config_manager(cmdline_opts, game->video(),
 	    game->jump_to_editor());
 
-	loadscreen::start_stage("load config");
-	res = config_manager.init_game_config(game_config_manager::NO_FORCE_RELOAD);
+	gui2::tloadscreen::display(game->video(), [&res, &config_manager]() {
+		gui2::tloadscreen::progress("load config");
+		res = config_manager.init_game_config(game_config_manager::NO_FORCE_RELOAD);
+
+		if(res == false) {
+			std::cerr << "could not initialize game config\n";
+			return;
+		}
+		gui2::tloadscreen::progress("init fonts");
+
+		res = font::load_font_config();
+		if(res == false) {
+			std::cerr << "could not re-initialize fonts for the current language\n";
+			return;
+	}
+
+		gui2::tloadscreen::progress("refresh addons");
+		refresh_addon_version_info_cache();
+	});
+
 	if(res == false) {
-		std::cerr << "could not initialize game config\n";
 		return 1;
 	}
-	loadscreen::start_stage("init fonts");
-
-	res = font::load_font_config();
-	if(res == false) {
-		std::cerr << "could not re-initialize fonts for the current language\n";
-		return 1;
-	}
-
-	loadscreen::start_stage("refresh addons");
-	refresh_addon_version_info_cache();
 
 	config tips_of_day;
-
-	loadscreen::start_stage("titlescreen");
 
 	LOG_CONFIG << "time elapsed: "<<  (SDL_GetTicks() - start_ticks) << " ms\n";
 
 	plugins_manager plugins_man(new application_lua_kernel(&game->video()));
 
 	plugins_context::Reg const callbacks[] = {
-		{ "play_multiplayer",		boost::bind(&game_launcher::play_multiplayer, game.get())},
-		{ NULL, NULL }
+		{ "play_multiplayer",		std::bind(&game_launcher::play_multiplayer, game.get())},
 	};
 	plugins_context::aReg const accessors[] = {
-		{ "command_line",		boost::bind(&commandline_options::to_config, &cmdline_opts)},
-		{ NULL, NULL }
+		{ "command_line",		std::bind(&commandline_options::to_config, &cmdline_opts)},
 	};
 
 	plugins_context plugins("titlescreen", callbacks, accessors);
 
-	plugins.set_callback("exit", boost::bind(&safe_exit, boost::bind(get_int, _1, "code", 0)), false);
+	plugins.set_callback("exit", std::bind(&safe_exit, std::bind(get_int, std::placeholders::_1, "code", 0)), false);
 
 	for (;;)
 	{
@@ -702,7 +702,7 @@ static int do_gameloop(const std::vector<std::string>& args)
 			    config_manager.game_config().child("titlescreen_music");
 			if (cfg) {
 				sound::play_music_repeatedly(game_config::title_music);
-				BOOST_FOREACH(const config &i, cfg.child_range("music")) {
+				for (const config &i : cfg.child_range("music")) {
 					sound::play_music_config(i);
 				}
 				sound::commit_music_changes();
@@ -711,8 +711,6 @@ static int do_gameloop(const std::vector<std::string>& args)
 				sound::stop_music();
 			}
 		}
-
-		loadscreen_manager.reset();
 
 		handle_lua_script_args(&*game,cmdline_opts);
 
@@ -843,8 +841,7 @@ static int do_gameloop(const std::vector<std::string>& args)
 
 			int current = 0;
 			std::vector<config> cores;
-			BOOST_FOREACH(const config& core,
-					game_config_manager::get()->game_config().child_range("core")) {
+			for (const config& core : game_config_manager::get()->game_config().child_range("core")) {
 				cores.push_back(core);
 				if (core["id"] == preferences::core_id())
 					current = cores.size() -1;
@@ -859,9 +856,10 @@ static int do_gameloop(const std::vector<std::string>& args)
 			}
 			continue;
 		} else if(res == gui2::ttitle_screen::RELOAD_GAME_DATA) {
-			loadscreen::global_loadscreen_manager loadscreen(game->video());
-			config_manager.reload_changed_game_config();
-			image::flush_cache();
+			gui2::tloadscreen::display(game->video(), [&config_manager]() {
+				config_manager.reload_changed_game_config();
+				image::flush_cache();
+			});
 			continue;
 		} else if(res == gui2::ttitle_screen::START_MAP_EDITOR) {
 			game->start_editor();
@@ -933,7 +931,7 @@ static void restart_process(const std::vector<std::string>& commandline)
 {
 	wchar_t process_path[MAX_PATH];
 	SetLastError(ERROR_SUCCESS);
-	GetModuleFileNameW(NULL, process_path, MAX_PATH);
+	GetModuleFileNameW(nullptr, process_path, MAX_PATH);
 	if (GetLastError() != ERROR_SUCCESS)
 	{
 		throw std::runtime_error("Failed to retrieve the process path");
@@ -952,8 +950,8 @@ static void restart_process(const std::vector<std::string>& commandline)
 	PROCESS_INFORMATION process_info;
 	ZeroMemory(&process_info, sizeof(process_info));
 
-	CreateProcessW(process_path, commandline_c_str, NULL, NULL,
-		false, 0u, NULL, NULL, &startup_info, &process_info);
+	CreateProcessW(process_path, commandline_c_str, nullptr, nullptr,
+		false, 0u, nullptr, nullptr, &startup_info, &process_info);
 
 	CloseHandle(process_info.hProcess);
 	CloseHandle(process_info.hThread);
@@ -1039,13 +1037,13 @@ int main(int argc, char** argv)
 	terminate_handler.sa_handler = wesnoth_terminate_handler;
 	terminate_handler.sa_flags = 0;
 	sigemptyset(&terminate_handler.sa_mask);
-	sigaction(SIGTERM, &terminate_handler, NULL);
-	sigaction(SIGINT, &terminate_handler, NULL);
+	sigaction(SIGTERM, &terminate_handler, nullptr);
+	sigaction(SIGINT, &terminate_handler, nullptr);
 #endif
 
 	try {
 		std::cerr << "Battle for Wesnoth v" << game_config::revision << '\n';
-		const time_t t = time(NULL);
+		const time_t t = time(nullptr);
 		std::cerr << "Started on " << ctime(&t) << "\n";
 
 		const std::string& exe_dir = filesystem::get_exe_dir();

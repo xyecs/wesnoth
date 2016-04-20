@@ -34,9 +34,7 @@
 #include "team.hpp"
 #include "units/types.hpp"
 
-#include "utils/foreach.hpp"
-
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -62,7 +60,7 @@ void tunit_preview_pane::finalize_setup()
 
 	if(button_profile_) {
 		connect_signal_mouse_left_click(*button_profile_,
-			boost::bind(&tunit_preview_pane::profile_button_callback, this));
+			std::bind(&tunit_preview_pane::profile_button_callback, this));
 	}
 }
 
@@ -90,7 +88,7 @@ void tunit_preview_pane::set_displayed_type(const unit_type* type)
 
 	if(label_level_) {
 		utils::string_map symbols;
-		symbols["lvl"] = lexical_cast<std::string>(type->level());
+		symbols["lvl"] = std::to_string(type->level());
 
 		std::string l_str = vgettext("Lvl $lvl", symbols);
 
@@ -129,7 +127,7 @@ void tunit_preview_pane::set_displayed_type(const unit_type* type)
 		bool has_traits = false;
 		std::stringstream t_str;
 
-		FOREACH(const AUTO& tr, type->possible_traits())
+		for(const auto& tr : type->possible_traits())
 		{
 			if(tr["availability"] != "musthave") continue;
 
@@ -158,7 +156,7 @@ void tunit_preview_pane::set_displayed_type(const unit_type* type)
 		if(!type->abilities().empty()) {
 			str << "<b>" << _("Abilities") << "</b>" << "\n";
 
-			FOREACH(const AUTO& ab, type->abilities())
+			for(const auto& ab : type->abilities())
 			{
 				str << "  " << ab << "\n";
 			}
@@ -170,7 +168,7 @@ void tunit_preview_pane::set_displayed_type(const unit_type* type)
 		if(!type->attacks().empty()) {
 			str << "<b>" << _("Attacks") << "</b>" << "\n";
 
-			FOREACH(const AUTO& a, type->attacks())
+			for(const auto& a : type->attacks())
 			{
 				str << "<span color='#f5e6c1'>" << a.damage()
 					<< utils::unicode_multiplication_sign << a.num_attacks() << " " << a.name() << "</span>" << "\n";

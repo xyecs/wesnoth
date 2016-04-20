@@ -50,6 +50,7 @@
 #include "gui/dialogs/gamestate_inspector.hpp"
 #include "gui/dialogs/label_settings.hpp"
 #include "gui/dialogs/language_selection.hpp"
+#include "gui/dialogs/loadscreen.hpp"
 #include "gui/dialogs/lobby/lobby.hpp"
 #include "gui/dialogs/lobby/player_info.hpp"
 #include "gui/dialogs/lua_interpreter.hpp"
@@ -87,9 +88,7 @@
 #include "video.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
+#include "utils/functional.hpp"
 
 #include <memory>
 
@@ -158,7 +157,7 @@ namespace {
 	template<class T>
 	void test_resolutions(const tresolution_list& resolutions)
 	{
-		BOOST_FOREACH(const tresolution& resolution, resolutions) {
+		for(const tresolution& resolution : resolutions) {
 			CVideo& video = test_utils::get_fake_display(resolution.first, resolution.second).video();
 
 			boost::scoped_ptr<gui2::tdialog> dlg(twrapper<T>::create());
@@ -196,7 +195,7 @@ namespace {
 	{
 		bool interact = false;
 		for(int i = 0; i < 2; ++i) {
-			BOOST_FOREACH(const tresolution& resolution, resolutions) {
+			for(const tresolution& resolution : resolutions) {
 				CVideo& video = test_utils::get_fake_display(resolution.first, resolution.second).video();
 
 				boost::scoped_ptr<gui2::tpopup> dlg(twrapper<T>::create());
@@ -208,7 +207,7 @@ namespace {
 				try {
 					dlg->show(video, interact);
 					gui2::twindow* window = gui2::unit_test_window((*dlg.get()));
-					BOOST_REQUIRE_NE(window, static_cast<void*>(NULL));
+					BOOST_REQUIRE_NE(window, static_cast<void*>(nullptr));
 					window->draw();
 				} catch(gui2::tlayout_exception_width_modified&) {
 					exception = "gui2::tlayout_exception_width_modified";
@@ -242,7 +241,7 @@ namespace {
 	void test_tip_resolutions(const tresolution_list& resolutions
 			, const std::string& id)
 	{
-		BOOST_FOREACH(const tresolution& resolution, resolutions) {
+		for(const tresolution& resolution : resolutions) {
 			
 			//CVideo& video = test_utils::get_fake_display(resolution.first, resolution.second).video();
 
@@ -290,15 +289,6 @@ namespace {
 #pragma warning(pop)
 #endif
 
-const tresolution_list& get_small_gui_resolutions()
-{
-	static tresolution_list result;
-	if(result.empty()) {
-		result.push_back(std::make_pair(800, 480));
-	}
-	return result;
-}
-
 const tresolution_list& get_gui_resolutions()
 {
 	static tresolution_list result;
@@ -318,7 +308,6 @@ void test()
 
 	for(size_t i = 0; i < 2; ++i) {
 
-		test_resolutions<T>(get_small_gui_resolutions());
 		test_resolutions<T>(get_gui_resolutions());
 
 		break; // FIXME: New widgets break
@@ -333,7 +322,6 @@ void test_popup()
 
 	for(size_t i = 0; i < 2; ++i) {
 
-		test_popup_resolutions<T>(get_small_gui_resolutions());
 		test_popup_resolutions<T>(get_gui_resolutions());
 
 		gui2::new_widgets = true;
@@ -346,7 +334,6 @@ void test_tip(const std::string& id)
 
 	for(size_t i = 0; i < 2; ++i) {
 
-		test_tip_resolutions(get_small_gui_resolutions(), id);
 		test_tip_resolutions(get_gui_resolutions(), id);
 
 		gui2::new_widgets = true;
@@ -396,6 +383,7 @@ BOOST_AUTO_TEST_CASE(test_gui2)
 	test<gui2::tgame_save_oos>();
 	test<gui2::tgamestate_inspector>();
 	test<gui2::tlanguage_selection>();
+	// test<gui2::tloadscreen>(); TODO: enable
 	test<gui2::tlobby_main>();
 	test<gui2::tlobby_player_info>();
 	test<gui2::tmessage>();
@@ -437,14 +425,14 @@ BOOST_AUTO_TEST_CASE(test_gui2)
 
 	/*
 	 * The unit attack unit test are disabled for now, they calling parameters
-	 * don't allow 'NULL's needs to be fixed.
+	 * don't allow 'nullptr's needs to be fixed.
 	 */
 	list.erase(
 			std::remove(list.begin(), list.end(), "unit_attack")
 			, list.end());
 	/*
 	 * The chat log unit test are disabled for now, they calling parameters
-	 * don't allow 'NULL's needs to be fixed.
+	 * don't allow 'nullptr's needs to be fixed.
 	 */
 	list.erase(
 			std::remove(list.begin(), list.end(), "chat_log")
@@ -473,6 +461,7 @@ BOOST_AUTO_TEST_CASE(test_gui2)
 	list.erase(std::remove(list.begin(), list.end(), "addon_filter_options"), list.end());
 	list.erase(std::remove(list.begin(), list.end(), "addon_uninstall_list"), list.end());
 	list.erase(std::remove(list.begin(), list.end(), "addon_list"), list.end());
+	list.erase(std::remove(list.begin(), list.end(), "loadscreen"), list.end());
 	list.erase(std::remove(list.begin(), list.end(), "network_transmission"), list.end());
 	list.erase(std::remove(list.begin(), list.end(), "synced_choice_wait"), list.end());
 	list.erase(std::remove(list.begin(), list.end(), "drop_down_list"), list.end());
@@ -481,7 +470,7 @@ BOOST_AUTO_TEST_CASE(test_gui2)
 
 	// Test size() instead of empty() to get the number of offenders
 	BOOST_CHECK_EQUAL(list.size(), 0);
-	BOOST_FOREACH(const std::string& id, list) {
+	for(const std::string& id : list) {
 		std::cerr << "Window '" << id << "' registered but not tested.\n";
 	}
 }
@@ -568,7 +557,7 @@ struct twrapper<gui2::tchat_log>
 		static config cfg;
 		static vconfig vcfg(cfg);
 
-		return new gui2::tchat_log(vcfg, NULL);
+		return new gui2::tchat_log(vcfg, nullptr);
 	}
 };
 
@@ -726,7 +715,7 @@ struct twrapper<gui2::tmp_change_control>
 {
 	static gui2::tmp_change_control* create()
 	{
-		return new gui2::tmp_change_control(NULL);
+		return new gui2::tmp_change_control(nullptr);
 	}
 };
 
@@ -773,7 +762,7 @@ struct twrapper<gui2::tdepcheck_confirm_change>
 {
 	static gui2::tdepcheck_confirm_change* create()
 	{
-		static std::vector<std::string> mods = boost::assign::list_of("mod_one")("some other")("more");
+		static std::vector<std::string> mods = {"mod_one", "some other", "more"};
 		return new gui2::tdepcheck_confirm_change(true, mods, "requester");
 	}
 };
@@ -783,7 +772,7 @@ struct twrapper<gui2::tdepcheck_select_new>
 {
 	static gui2::tdepcheck_select_new* create()
 	{
-		static std::vector<std::string> mods = boost::assign::list_of("mod_one")("some other")("more");
+		static std::vector<std::string> mods = {"mod_one", "some other", "more"};
 		return new gui2::tdepcheck_select_new(ng::depcheck::MODIFICATION, mods);
 	}
 };
@@ -841,8 +830,8 @@ struct twrapper<gui2::ttheme_list>
 	}
 	static gui2::ttheme_list* create()
 	{
-		static std::vector<theme_info> themes = boost::assign::list_of(make_theme("classic"))
-		(make_theme("new"))(make_theme("more"))(make_theme("themes"));
+		static std::vector<theme_info> themes = {make_theme("classic"),
+		make_theme("new"), make_theme("more"), make_theme("themes")};
 		return new gui2::ttheme_list(themes, 0);
 	}
 };
@@ -856,7 +845,7 @@ struct twrapper<gui2::teditor_generate_map>
 		BOOST_REQUIRE_MESSAGE(result, "Failed to create a dialog.");
 
 		std::vector<map_generator*> map_generators;
-		BOOST_FOREACH(const config &i, main_config.child_range("multiplayer")) {
+		for(const config &i : main_config.child_range("multiplayer")) {
 			if(i["scenario_generation"] == "default") {
 				const config &generator_cfg = i.child("generator");
 				if (generator_cfg) {
@@ -944,7 +933,7 @@ struct twrapper<gui2::twml_error>
 {
 	static gui2::twml_error* create()
 	{
-		static std::vector<std::string> files = boost::assign::list_of("some")("files")("here");
+		static std::vector<std::string> files = {"some", "files", "here"};
 		return new gui2::twml_error("Summary", "Post summary", files, "Details");
 	}
 };

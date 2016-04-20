@@ -25,7 +25,7 @@
 #include "gettext.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -44,14 +44,14 @@ ttree_view::ttree_view(const std::vector<tnode_definition>& node_definitions)
 	, need_layout_(false)
 	, root_node_(new ttree_view_node("root",
 									 node_definitions_,
-									 NULL,
+									 nullptr,
 									 *this,
 									 std::map<std::string, string_map>()))
-	, selected_item_(NULL)
+	, selected_item_(nullptr)
 	, selection_change_callback_()
 {
 	connect_signal<event::LEFT_BUTTON_DOWN>(
-			boost::bind(&ttree_view::signal_handler_left_button_down, this, _2),
+			std::bind(&ttree_view::signal_handler_left_button_down, this, _2),
 			event::tdispatcher::back_pre_child);
 }
 
@@ -193,7 +193,7 @@ ttree_view_node* ttree_view::get_next_node()
 {	
 	ttree_view_node* selected = selected_item();
 	if(!selected) {
-		return NULL;
+		return nullptr;
 	}
 	ttree_view_node* visible = selected->get_last_visible_parent_node();
 	if(visible != selected) {
@@ -297,7 +297,7 @@ ttree_view_definition::ttree_view_definition(const config& cfg)
  * @end{parent}{name="gui/"}
  */
 ttree_view_definition::tresolution::tresolution(const config& cfg)
-	: tresolution_definition_(cfg), grid(NULL)
+	: tresolution_definition_(cfg), grid(nullptr)
 {
 	// Note the order should be the same as the enum tstate is listbox.hpp.
 	state.push_back(tstate_definition(cfg.child("state_enabled")));
@@ -377,7 +377,7 @@ tbuilder_tree_view::tbuilder_tree_view(const config& cfg)
 	, nodes()
 {
 
-	FOREACH(const AUTO & node, cfg.child_range("node"))
+	for(const auto & node : cfg.child_range("node"))
 	{
 		nodes.push_back(ttree_node(node));
 	}
@@ -418,7 +418,7 @@ twidget* tbuilder_tree_view::build() const
 ttree_node::ttree_node(const config& cfg)
 	: id(cfg["id"])
 	, unfolded(cfg["unfolded"].to_bool(false))
-	, builder(NULL)
+	, builder(nullptr)
 {
 	VALIDATE(!id.empty(), missing_mandatory_wml_key("node", "id"));
 

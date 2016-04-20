@@ -19,8 +19,6 @@
 #include "hotkey_item.hpp"
 #include "config.hpp"
 #include "preferences.hpp"
-
-#include <boost/foreach.hpp>
 #include "log.hpp"
 
 static lg::log_domain log_config("config");
@@ -37,6 +35,10 @@ namespace {
 	hotkey::hk_scopes scope_main(1 << hotkey::SCOPE_MAIN_MENU);
 // this contains all static hotkeys
 hotkey::hotkey_command_temp hotkey_list_[] = {
+	{ hotkey::HOTKEY_SCROLL_UP, "scroll-up", N_("Scroll Up"), false, scope_game | scope_editor, "" },
+	{ hotkey::HOTKEY_SCROLL_DOWN, "scroll-down", N_("Scroll Down"), false, scope_game | scope_editor, "" },
+	{ hotkey::HOTKEY_SCROLL_LEFT, "scroll-left", N_("Scroll Left"), false, scope_game | scope_editor, "" },
+	{ hotkey::HOTKEY_SCROLL_RIGHT, "scroll-right", N_("Scroll Right"), false, scope_game | scope_editor, "" },
 
 	{ hotkey::HOTKEY_CANCEL, N_("cancel"), N_("Cancel"), false, scope_game | scope_editor | scope_main, "" },
 	{ hotkey::HOTKEY_SELECT_HEX, "selecthex", N_("Select Hex"), false, scope_game, "" },
@@ -442,7 +444,7 @@ bool hotkey_command::null() const
 
 const hotkey_command& hotkey_command::get_command_by_command(hotkey::HOTKEY_COMMAND command)
 {
-	BOOST_FOREACH(hotkey_command& cmd, known_hotkeys)
+	for(hotkey_command& cmd : known_hotkeys)
 	{
 		if(cmd.id == command)
 			return cmd;
@@ -488,7 +490,7 @@ void init_hotkey_commands()  {
 	known_hotkeys = known_hotkeys_temp;
 
 	size_t i = 0;
-	BOOST_FOREACH(hotkey_command_temp& cmd, hotkey_list_)
+	for(hotkey_command_temp& cmd : hotkey_list_)
 	{
 		known_hotkeys.push_back( new hotkey_command(cmd.id, cmd.command, t_string(cmd.description, "wesnoth-lib"), cmd.hidden, cmd.scope, t_string(cmd.tooltip, "wesnoth-lib")));
 		command_map_[cmd.command] = i;

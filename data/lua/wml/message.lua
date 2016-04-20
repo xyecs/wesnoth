@@ -5,24 +5,41 @@ local location_set = wesnoth.require "lua/location_set.lua"
 local _ = wesnoth.textdomain "wesnoth"
 
 local function log(msg, level)
-	wesnoth.wml_actions.wml_message({
-		message = msg,
-		logger = level,
-	})
+	wesnoth.log(level, msg, true)
 end
 
 local function get_image(cfg, speaker)
 	local image = cfg.image
+	local left_side = true
+	
+	if image == "~RIGHT()" then
+		image = nil
+		left_side = false
+	end
 
 	if speaker and (image == nil or image == "") then
 		image = speaker.portrait
 	end
 
 	if image == "none" or image == nil then
-		return ""
+		return "", true
 	end
 
-	return image
+	if image:find("~RIGHT%(%)") then
+		left_side = false
+		-- The percent signs escape the parentheses for a literal match
+		image = image:gsub("~RIGHT%(%)", "")
+	end
+
+	if image:find("~LEFT%(%)") then
+		-- This currently overrides ~RIGHT()
+		-- Use if a portrait defaults to ~RIGHT(),
+		-- or in [unit_type] to force it to left.
+		left_side = true
+		image = image:gsub("~LEFT%(%)", "")
+	end
+
+	return image, left_side
 end
 
 local function get_caption(cfg, speaker)
@@ -53,16 +70,8 @@ local function get_speaker(cfg)
 end
 
 local function message_user_choice(cfg, speaker, options, text_input)
-	local image = get_image(cfg, speaker)
+	local image, left_side = get_image(cfg, speaker)
 	local caption = get_caption(cfg, speaker)
-
-	local left_side = true
-	-- If this doesn't work, might need tostring()
-	if image:find("~RIGHT()") then
-		left_side = false
-		-- The percent signs escape the parentheses for a literal match
-		image = image:gsub("~RIGHT%(%)", "")
-	end
 
 	local msg_cfg = {
 		left_side = left_side,

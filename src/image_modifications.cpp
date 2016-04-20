@@ -22,8 +22,6 @@
 #include "sdl/alpha.hpp"
 #include "serialization/string_utils.hpp"
 
-#include <boost/foreach.hpp>
-
 #include <map>
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
@@ -35,11 +33,11 @@ static lg::log_domain log_display("display");
 namespace image {
 
 
-/** Adds @a mod to the queue (unless mod is NULL). */
+/** Adds @a mod to the queue (unless mod is nullptr). */
 void modification_queue::push(modification * mod)
 {
 	// Null pointers do not get stored. (Shouldn't happen, but just in case.)
-	if ( mod != NULL )
+	if ( mod != nullptr )
 		priorities_[mod->priority()].push_back(mod);
 }
 
@@ -60,7 +58,7 @@ void modification_queue::pop()
 size_t modification_queue::size() const
 {
 	size_t count = 0;
-	BOOST_FOREACH ( const map_type::value_type & pair, priorities_ )
+	for (const map_type::value_type & pair : priorities_)
 		count += pair.second.size();
 	return count;
 }
@@ -89,7 +87,7 @@ std::map<std::string, mod_parser> mod_parsers;
  * @param encoded_mod A string representing a single modification
  *
  * @return A pointer to the decoded modification object
- * @retval NULL if the string is invalid or a parser isn't found
+ * @retval nullptr if the string is invalid or a parser isn't found
  */
 modification* decode_modification(const std::string& encoded_mod)
 {
@@ -98,7 +96,7 @@ modification* decode_modification(const std::string& encoded_mod)
 	if(split.size() != 2) {
 		ERR_DP << "error parsing image modifications: "
 		       << encoded_mod << "\n";
-		return NULL;
+		return nullptr;
 	}
 
 	std::string mod_type = split[0];
@@ -107,7 +105,7 @@ modification* decode_modification(const std::string& encoded_mod)
 	if(mod_parsers.find(mod_type) == mod_parsers.end()) {
 		ERR_DP << "unknown image function in path: "
 		       << mod_type << '\n';
-		return NULL;
+		return nullptr;
 	}
 
 	return (*mod_parsers[mod_type])(args);
@@ -138,8 +136,7 @@ modification_queue modification::decode(const std::string& encoded_mods)
 {
 	modification_queue mods;
 
-	BOOST_FOREACH(const std::string& encoded_mod,
-		utils::parenthetical_split(encoded_mods, '~')) {
+	for(const std::string& encoded_mod : utils::parenthetical_split(encoded_mods, '~')) {
 		modification* mod = decode_modification(encoded_mod);
 
 		if(mod) {
@@ -299,7 +296,7 @@ surface blit_modification::operator()(const surface& src) const
 	surface nsrc = make_neutral_surface(src);
 	surface nsurf = make_neutral_surface(surf_);
 	SDL_Rect r = sdl::create_rect(x_, y_, 0, 0);
-	blit_surface(nsurf, NULL, nsrc, &r);
+	blit_surface(nsurf, nullptr, nsrc, &r);
 	return nsrc;
 }
 
@@ -324,7 +321,7 @@ surface mask_modification::operator()(const surface& src) const
 		return mask_surface(src, mask_);
 	SDL_Rect r = sdl::create_rect(x_, y_, 0, 0);
 	surface new_mask = create_neutral_surface(src->w, src->h);
-	blit_surface(mask_, NULL, new_mask, &r);
+	blit_surface(mask_, nullptr, new_mask, &r);
 	return mask_surface(src, new_mask);
 }
 
@@ -344,7 +341,7 @@ int mask_modification::get_y() const
 }
 
 surface light_modification::operator()(const surface& src) const {
-	if(src == NULL) { return NULL; }
+	if(src == nullptr) { return nullptr; }
 
 	//light_surface wants a neutral surface having same dimensions
 	surface nsurf;
@@ -513,7 +510,7 @@ surface brighten_modification::operator()(const surface &src) const
 	surface ret = make_neutral_surface(src);
 	surface tod_bright(image::get_image(game_config::images::tod_bright));
 	if (tod_bright)
-		blit_surface(tod_bright, NULL, ret, NULL);
+		blit_surface(tod_bright, nullptr, ret, nullptr);
 	return ret;
 }
 
@@ -522,17 +519,17 @@ surface darken_modification::operator()(const surface &src) const
 	surface ret = make_neutral_surface(src);
 	surface tod_dark(image::get_image(game_config::images::tod_dark));
 	if (tod_dark)
-		blit_surface(tod_dark, NULL, ret, NULL);
+		blit_surface(tod_dark, nullptr, ret, nullptr);
 	return ret;
 }
 
 surface background_modification::operator()(const surface &src) const
 {
 	surface ret = make_neutral_surface(src);
-	SDL_FillRect(ret, NULL, SDL_MapRGBA(ret->format, color_.r, color_.g,
+	SDL_FillRect(ret, nullptr, SDL_MapRGBA(ret->format, color_.r, color_.g,
 					    color_.b, color_.a));
 	SDL_SetAlpha(src, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
-	blit_surface(src, NULL, ret, NULL);
+	blit_surface(src, nullptr, ret, nullptr);
 	return ret;
 }
 
@@ -578,7 +575,7 @@ REGISTER_MOD_PARSER(TC, args)
 	if(params.size() < 2) {
 		ERR_DP << "too few arguments passed to the ~TC() function" << std::endl;
 
-		return NULL;
+		return nullptr;
 	}
 
 	int side_n = lexical_cast_default<int>(params[0], -1);
@@ -586,7 +583,7 @@ REGISTER_MOD_PARSER(TC, args)
 	if (side_n < 1) {
 		ERR_DP << "invalid team (" << side_n
 		       << ") passed to the ~TC() function\n";
-		return NULL;
+		return nullptr;
 	}
 	else if (side_n < static_cast<int>(image::get_team_colors().size())) {
 		team_color = image::get_team_colors()[side_n - 1];
@@ -594,11 +591,11 @@ REGISTER_MOD_PARSER(TC, args)
 	else {
 		// This side is not initialized; use default "n"
 		try {
-			team_color = lexical_cast<std::string>(side_n);
+			team_color = std::to_string(side_n);
 		} catch(bad_lexical_cast const&) {
 			ERR_DP << "bad things happen" << std::endl;
 
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -610,7 +607,7 @@ REGISTER_MOD_PARSER(TC, args)
 		       << "' palette\n"
 		       << "bailing out from TC\n";
 
-		return NULL;
+		return nullptr;
 	}
 
 	std::map<Uint32, Uint32> rc_map;
@@ -628,7 +625,7 @@ REGISTER_MOD_PARSER(TC, args)
 		       << '\n'
 		       << "bailing out from TC\n";
 
-		return NULL;
+		return nullptr;
 	}
 
 	return new rc_modification(rc_map);
@@ -665,7 +662,7 @@ REGISTER_MOD_PARSER(RC, args)
 		return new rc_modification(rc_map);
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 // Palette switch
@@ -677,7 +674,7 @@ REGISTER_MOD_PARSER(PAL, args)
 		ERR_DP << "not enough arguments passed to the ~PAL() function: "
 		       << args << "\n";
 
-		return NULL;
+		return nullptr;
 	}
 
 
@@ -702,7 +699,7 @@ REGISTER_MOD_PARSER(PAL, args)
 		ERR_DP
 			<< "bailing out from PAL\n";
 
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -741,7 +738,7 @@ REGISTER_MOD_PARSER(ROTATE, args)
 					lexical_cast_default<int>(slice_params[2]));
 			break;
 	}
-	return NULL;
+	return nullptr;
 }
 
 // Grayscale
@@ -759,7 +756,7 @@ REGISTER_MOD_PARSER(BW, args)
 			int threshold = lexical_cast<int>(params[0]);
 			if (threshold < 0 || threshold > 255) {
 				ERR_DP << "~BW() argument out of range 0 - 255" << std::endl;
-				return NULL;
+				return nullptr;
 			}
 			else {
 				return new bw_modification(threshold);
@@ -767,12 +764,12 @@ REGISTER_MOD_PARSER(BW, args)
 		}
 		catch (bad_lexical_cast) {
 			ERR_DP << "unsupported argument in ~BW() function" << std::endl;
-			return NULL;
+			return nullptr;
 		}
 	}
 	else {
 		ERR_DP << "~BW() requires  exactly one argument" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -799,7 +796,7 @@ REGISTER_MOD_PARSER(NEG, args)
 				int threshold = lexical_cast<int>(params[0]);
 				if (threshold < -1 || threshold > 255) {
 					ERR_DP << "unsupported argument value in ~NEG() function" << std::endl;
-					return NULL;
+					return nullptr;
 				}
 				else {
 					return new negative_modification(threshold, threshold, threshold);
@@ -807,7 +804,7 @@ REGISTER_MOD_PARSER(NEG, args)
 			}
 			catch (bad_lexical_cast) {
 				ERR_DP << "unsupported argument value in ~NEG() function" << std::endl;
-				return NULL;
+				return nullptr;
 			}
 			break;
 		case 3:
@@ -817,7 +814,7 @@ REGISTER_MOD_PARSER(NEG, args)
 				int thresholdBlue = lexical_cast<int>(params[2]);
 				if (thresholdRed < -1 || thresholdRed > 255 || thresholdGreen < -1 || thresholdGreen > 255 || thresholdBlue < -1 || thresholdBlue > 255) {
 					ERR_DP << "unsupported argument value in ~NEG() function" << std::endl;
-					return NULL;
+					return nullptr;
 				}
 				else {
 					return new negative_modification(thresholdRed, thresholdGreen, thresholdBlue);
@@ -825,15 +822,15 @@ REGISTER_MOD_PARSER(NEG, args)
 			}
 			catch (bad_lexical_cast) {
 				ERR_DP << "unsupported argument value in ~NEG() function" << std::endl;
-				return NULL;
+				return nullptr;
 			}
 			break;
 		default:
 			ERR_DP << "~NEG() requires 0, 1 or 3 arguments" << std::endl;
-			return NULL;
+			return nullptr;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 // Plot Alpha
@@ -855,7 +852,7 @@ REGISTER_MOD_PARSER(ADJUST_ALPHA, args)
 
 	if(params.size() != 1) {
 		ERR_DP << "~ADJUST_ALPHA() requires exactly 1 arguments" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	std::string opacity_str = params.at(0);
@@ -878,7 +875,7 @@ REGISTER_MOD_PARSER(CS, args)
 
 	if(s == 0) {
 		ERR_DP << "no arguments passed to the ~CS() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int r = 0, g = 0, b = 0;
@@ -902,7 +899,7 @@ REGISTER_MOD_PARSER(BLEND, args)
 
 	if(params.size() != 4) {
 		ERR_DP << "~BLEND() requires exactly 4 arguments" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	float opacity = 0.0f;
@@ -933,7 +930,7 @@ REGISTER_MOD_PARSER(CROP, args)
 
 	if(s == 0 || (s == 1 && slice_params[0].empty())) {
 		ERR_DP << "no arguments passed to the ~CROP() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	SDL_Rect slice_rect = { 0, 0, 0, 0 };
@@ -969,7 +966,7 @@ REGISTER_MOD_PARSER(BLIT, args)
 
 	if(s == 0 || (s == 1 && param[0].empty())){
 		ERR_DP << "no arguments passed to the ~BLIT() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int x = 0, y = 0;
@@ -981,14 +978,14 @@ REGISTER_MOD_PARSER(BLIT, args)
 
 	if(x < 0 || y < 0) { //required by blit_surface
 		ERR_DP << "negative position arguments in ~BLIT() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	const image::locator img(param[0]);
 	std::stringstream message;
 	message << "~BLIT():";
 	if(!check_image(img, message))
-		return NULL;
+		return nullptr;
 	surface surf = get_image(img);
 
 	return new blit_modification(surf, x, y);
@@ -1002,7 +999,7 @@ REGISTER_MOD_PARSER(MASK, args)
 
 	if(s == 0 || (s == 1 && param[0].empty())){
 		ERR_DP << "no arguments passed to the ~MASK() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int x = 0, y = 0;
@@ -1014,14 +1011,14 @@ REGISTER_MOD_PARSER(MASK, args)
 
 	if(x < 0 || y < 0) { //required by blit_surface
 		ERR_DP << "negative position arguments in ~MASK() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	const image::locator img(param[0]);
 	std::stringstream message;
 	message << "~MASK():";
 	if(!check_image(img, message))
-		return NULL;
+		return nullptr;
 	surface surf = get_image(img);
 
 	return new mask_modification(surf, x, y);
@@ -1032,7 +1029,7 @@ REGISTER_MOD_PARSER(L, args)
 {
 	if(args.empty()){
 		ERR_DP << "no arguments passed to the ~L() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	surface surf = get_image(args);
@@ -1048,7 +1045,7 @@ REGISTER_MOD_PARSER(SCALE, args)
 
 	if(s == 0 || (s == 1 && scale_params[0].empty())) {
 		ERR_DP << "no arguments passed to the ~SCALE() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int w = 0, h = 0;
@@ -1069,7 +1066,7 @@ REGISTER_MOD_PARSER(SCALE_SHARP, args)
 
 	if(s == 0 || (s == 1 && scale_params[0].empty())) {
 		ERR_DP << "no arguments passed to the ~SCALE_SHARP() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int w = 0, h = 0;
@@ -1090,7 +1087,7 @@ REGISTER_MOD_PARSER(SCALE_INTO, args)
 
 	if(s == 0 || (s == 1 && scale_params[0].empty())) {
 		ERR_DP << "no arguments passed to the ~SCALE_INTO() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int w = 0, h = 0;
@@ -1111,7 +1108,7 @@ REGISTER_MOD_PARSER(SCALE_INTO_SHARP, args)
 
 	if(s == 0 || (s == 1 && scale_params[0].empty())) {
 		ERR_DP << "no arguments passed to the ~SCALE_INTO_SHARP() function" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	int w = 0, h = 0;
@@ -1193,14 +1190,14 @@ REGISTER_MOD_PARSER(B, args)
 
 REGISTER_MOD_PARSER(NOP, )
 {
-	return NULL;
+	return nullptr;
 }
 
 // Fake image function used by GUI2 portraits until
 // Mordante gets rid of it. *tsk* *tsk*
 REGISTER_MOD_PARSER(RIGHT, )
 {
-	return NULL;
+	return nullptr;
 }
 
 // Add a bright overlay.
@@ -1236,7 +1233,7 @@ REGISTER_MOD_PARSER(SWAP, args)
 	// accept 3 arguments (rgb) or 4 (rgba)
 	if (params.size() != 3 && params.size() != 4) {
 		ERR_DP << "incorrect number of arguments in ~SWAP() function, they must be 3 or 4" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	channel redValue, greenValue, blueValue, alphaValue;
@@ -1251,7 +1248,7 @@ REGISTER_MOD_PARSER(SWAP, args)
 		redValue = ALPHA;
 	} else {
 		ERR_DP << "unsupported argument value in ~SWAP() function: " << params[0] << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	// wash, rinse and repeat for the other three channels
@@ -1265,7 +1262,7 @@ REGISTER_MOD_PARSER(SWAP, args)
 		greenValue = ALPHA;
 	} else {
 		ERR_DP << "unsupported argument value in ~SWAP() function: " << params[0] << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	if (params[2] == "red") {
@@ -1278,7 +1275,7 @@ REGISTER_MOD_PARSER(SWAP, args)
 		blueValue = ALPHA;
 	} else {
 		ERR_DP << "unsupported argument value in ~SWAP() function: " << params[0] << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	// additional check: the params vector may not have a fourth elementh
@@ -1297,7 +1294,7 @@ REGISTER_MOD_PARSER(SWAP, args)
 			alphaValue = ALPHA;
 		} else {
 			ERR_DP << "unsupported argument value in ~SWAP() function: " << params[3] << std::endl;
-			return NULL;
+			return nullptr;
 		}
 	}
 

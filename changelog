@@ -1,7 +1,15 @@
 Version 1.13.4+dev:
+ * Graphics:
+   * Updated generic portrait of Mermaid Initiate.
  * Language and i18n:
    * Updated translations:
  * Removed support for SDL 1.2. SDL 2 is now the only supported version.
+ * Terrains:
+   * Changed terrain code of Desert Mountains from Mdy to Mdd.
+ * User Interface:
+   * Various design improvements to GUI2 widgets
+   * New simpler GUI2 loading screen
+   * New colored cursor graphics
  * WML engine:
    * Fix some issues with [foreach]
    * Fix some issues with backstab-like weapon specials
@@ -14,6 +22,21 @@ Version 1.13.4+dev:
    * New ~SCALE_INTO_SHARP(w,h) IPF which preserves aspect ratio, using
      nearest neighbor scaling.
    * Support delayed_variable_substitution= in [on_undo], [on_redo]
+     Note that this means $unit.x and $unit.y may not reflect the unit's
+     true location, so using [unstore_unit] on $unit may have unexpected effects.
+     This applies to $second_unit too. The $x1, $y1, $x2, $y2 variables work fine
+     though, so in most cases they can be used instead. Anything else in $unit
+     or $second_unit is also fine.
+   * formula= in SUF can now reference $other_unit via the formula variable "other"
+   * formula= now supported in location, side, and weapon filters
+   * Weapon filters now support number, parry, accuracy, and movement_used
+   * New [has_attack] in standard unit filters; supercedes has_weapon= and
+     uses full weapon filter.
+   * lua_function=var.member now works in SUF; however, 'var' still needs to
+     be a global variable.
+   * Added new keys name_generator, male_name_generator and female_name_generator
+     for the [race] tag to declare a context-free grammar to describe how names
+     are derived
    * AiWML:
      * Simplified aspect syntax which works for all aspects, present and future:
        * All aspects with simple values can be specified as key=value
@@ -106,6 +129,21 @@ Version 1.13.4+dev:
      (with the exception that it does not outline the hex if true is
      passed as the second argument), but this name change was done to
      emphasize that it acts on a unit, more than a location.
+   * New wesnoth.set_time_of_day function which sets the current time
+     of day, taken either as the time ID (eg "second_watch") or the index
+     of the time in the overall schedule (eg, 1 would be dawn in the default
+     schedule). Optional second argument takes a time area ID, to set
+     local instead of global time.
+   * New wesnoth.add_fog and wesnoth.remove_fog functions allow changing fog
+     on the map. The [lift_fog] and [clear_fog] tags now use this.
+   * New wesnoth.add_sound_source, wesnoth.remove_sound_source, and
+     wesnoth.get_sound_source functions to allow manipulation of sound
+     sources. The [sound_source] and [remove_sound_source] now use these.
+   * New wesnoth.log function for printing log messages. The [wml_message]
+     and [deprecated_message] tags now use this.
+   * New wesnoth.name_generator function builds a name generator and returns
+     it as a callable userdata. Both the original Markov chain generator
+     and the new context free gramamr generator are supported
    * WML tables defined in Lua now accept string keys with array values
      (where "array" is a table whose keys are all integers). This joins
      the elements of the array with commas and produces a single string
@@ -120,6 +158,10 @@ Version 1.13.4+dev:
      * abilities - list of the IDs of all abilities
    * Additional fields in table returned by wesnoth.get_terrain_info:
      * icon, editor_image, light
+   * Additional fields in unit type proxu:
+     * race, id, alignment
+     * attacks, which returns the same thing as unit.attacks
+     * abilities, same as unit.abilities
    * LuaAI:
      * The table returned by check_*() now has a "result" field which
        gives a description of the action's result; similar to "status"
@@ -147,8 +189,27 @@ Version 1.13.4+dev:
      * New wesnoth.micro_ais table contains the loaders for all Micro AIs.
        New loaders can easily be installed by add-ons. See any built-in
        micro AI (in ai/micro_ais/mai-defs/) for an example of how to do this.
+     * The attacks aspect can now be defined as a Lua aspect. The code
+       should return a table with keys "own" and "enemy", each of which may
+       be either a unit filter table or a function which takes a unit as a
+       parameter and returns true or false.
  * Wesnoth formula engine:
    * Formulas in unit filters can now access nearly all unit attributes
+     The following attributes were renamed (old names still work, for now):
+     leader -> canrecruit
+     total_movement -> max_moves
+     movement_left -> moves
+     states -> status
+   * Nearly all unit type, side, weapon, and terrain attributes available
+     to Lua code are now also exposed to WFL. The exceptions are mainly
+     translatable strings.
+   * Unit and side WML variables are now accessible under "wml_vars".
+     Since WML variables don't easily translate to formula variables, the
+     special attributes __all_children, __children, and __attributes provide
+     specialized views of the variables config as a list, string-list map,
+     and string-value map, respectively.
+   * The 'special' attribute of weapons was renamed to 'specials', and it now
+     contains the special IDs rather than their translateable names.
    * New syntax features:
      * String interpolation syntax. Within a formula string (enclosed in
        'single quotes'), the syntax [some_formula] interpolates the result
@@ -182,6 +243,7 @@ Version 1.13.4+dev:
        This counts backwards from the specified offset
        A size of -1 is the same as 1.
      * if() can take two arguments; returns null if the condition is false
+     * tolist() will now invert the effect of tomap()
      * debug_print() now shows in console if debug mode is on
    * New core functions:
      * Trig functions tan, acos, asin, atan have been added. (Sin and cos
@@ -198,6 +260,9 @@ Version 1.13.4+dev:
      * replace() replaces a sequence within a string
      * type() function checks the type of a formula result
      * distance_between() - this was promoted from FormulaAI to core
+     * pair() function that produces a key-value pair suitable for
+       passing to tomap() - this also means key-value pairs are now
+       serializable (relevant in FormulaAI)
    * Bugfixes:
      * Dice operator is now synced (where possible)
      * Modulus (%) operator now works on decimal numbers
@@ -222,6 +287,9 @@ Version 1.13.4+dev:
  * Miscellaneous and bug fixes:
    * Resolve translated logo images not being used (bug #24357)
    * Ported the "hexometer" tool from Bash to Python 3
+   * Recognize hotkey release events
+   * Allow changing keybindings for scrolling the map.
+   * Fix the move-to-targets candidate action of the default AI ignoring tunnels
 
 Version 1.13.4:
  * Language and i18n:

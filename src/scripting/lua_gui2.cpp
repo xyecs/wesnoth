@@ -47,7 +47,7 @@
 #include "serialization/string_utils.hpp"
 #include "tstring.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #include <map>
 #include <utility>
@@ -79,7 +79,7 @@ namespace {
 		scoped_dialog(const scoped_dialog &); // not implemented; not allowed.
 	};
 
-	scoped_dialog *scoped_dialog::current = NULL;
+	scoped_dialog *scoped_dialog::current = nullptr;
 
 	scoped_dialog::scoped_dialog(lua_State *l, gui2::twindow *w)
 		: L(l), prev(current), window(w), callbacks()
@@ -118,7 +118,7 @@ static gui2::twidget *find_widget(lua_State *L, int i, bool readonly)
 		luaL_typerror(L, i, "string");
 		error_call_destructors_3:
 		luaL_argerror(L, i, "widget not found");
-		return NULL;
+		return nullptr;
 	}
 
 	gui2::twidget *w = scoped_dialog::current->window;
@@ -579,7 +579,7 @@ int intf_set_dialog_callback(lua_State *L)
 
 	if (gui2::tclickable_ *c = dynamic_cast<gui2::tclickable_ *>(w)) {
 		static tdialog_callback_wrapper wrapper;
-		c->connect_click_handler(boost::bind(
+		c->connect_click_handler(std::bind(
 									  &tdialog_callback_wrapper::forward
 									, wrapper
 									, w));
@@ -590,7 +590,7 @@ int intf_set_dialog_callback(lua_State *L)
 	else if (gui2::tlist *l = dynamic_cast<gui2::tlist *>(w)) {
 		static tdialog_callback_wrapper wrapper;
 		connect_signal_notify_modified(*l
-				, boost::bind(
+				, std::bind(
 					  &tdialog_callback_wrapper::forward
 					, wrapper
 					, w));

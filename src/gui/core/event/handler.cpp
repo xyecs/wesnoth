@@ -23,7 +23,6 @@
 #include "gui/widgets/widget.hpp"
 #include "gui/widgets/window.hpp"
 #include "hotkey/hotkey_item.hpp"
-#include "utils/foreach.hpp"
 #include "video.hpp"
 #include "serialization/unicode_cast.hpp"
 
@@ -58,8 +57,8 @@ namespace event
 
 /***** Static data. *****/
 class thandler;
-static thandler* handler = NULL;
-static events::event_context* event_context = NULL;
+static thandler* handler = nullptr;
+static events::event_context* event_context = nullptr;
 
 #ifdef MAIN_EVENT_HANDLER
 static unsigned draw_interval = 0;
@@ -83,8 +82,8 @@ static Uint32 timer_sdl_draw_event(Uint32, void*)
 
 	data.type = DRAW_EVENT;
 	data.code = 0;
-	data.data1 = NULL;
-	data.data2 = NULL;
+	data.data1 = nullptr;
+	data.data2 = nullptr;
 
 	event.type = DRAW_EVENT;
 	event.user = data;
@@ -220,7 +219,7 @@ private:
 	 * Gets the dispatcher that wants to receive the keyboard input.
 	 *
 	 * @returns                   The dispatcher.
-	 * @retval NULL               No dispatcher found.
+	 * @retval nullptr               No dispatcher found.
 	 */
 	tdispatcher* keyboard_dispatcher();
 
@@ -303,9 +302,9 @@ private:
 
 thandler::thandler()
 	: events::sdl_handler(false)
-	, mouse_focus(NULL)
+	, mouse_focus(nullptr)
 	, dispatchers_()
-	, keyboard_focus_(NULL)
+	, keyboard_focus_(nullptr)
 {
 	if(SDL_WasInit(SDL_INIT_TIMER) == 0) {
 		if(SDL_InitSubSystem(SDL_INIT_TIMER) == -1) {
@@ -473,14 +472,14 @@ void thandler::disconnect(tdispatcher* dispatcher)
 	dispatchers_.erase(itor);
 
 	if(dispatcher == mouse_focus) {
-		mouse_focus = NULL;
+		mouse_focus = nullptr;
 	}
 	if(dispatcher == keyboard_focus_) {
-		keyboard_focus_ = NULL;
+		keyboard_focus_ = nullptr;
 	}
 
 	/***** Set proper state for the other dispatchers. *****/
-	FOREACH(AUTO dispatcher, dispatchers_)
+	for(auto dispatcher : dispatchers_)
 	{
 		dynamic_cast<twidget&>(*dispatcher).set_is_dirty(true);
 	}
@@ -494,16 +493,16 @@ void thandler::disconnect(tdispatcher* dispatcher)
 	if(dispatchers_.empty()) {
 		leave();
 		delete event_context;
-		event_context = NULL;
+		event_context = nullptr;
 	}
 }
 
 void thandler::activate()
 {
-	FOREACH(AUTO dispatcher, dispatchers_)
+	for(auto dispatcher : dispatchers_)
 	{
 		dispatcher->fire(
-				SDL_ACTIVATE, dynamic_cast<twidget&>(*dispatcher), NULL);
+				SDL_ACTIVATE, dynamic_cast<twidget&>(*dispatcher), nullptr);
 	}
 }
 
@@ -512,7 +511,7 @@ void thandler::handle_pre_draw()
 	// Don't display this event since it floods the screen
 	// DBG_GUI_E << "Firing " << PRE_DRAW << ".\n";
 
-	FOREACH(AUTO dispatcher, dispatchers_)
+  	for(auto dispatcher : dispatchers_)
 	{
 		dispatcher->fire(PRE_DRAW, dynamic_cast<twidget&>(*dispatcher));
 	}
@@ -535,7 +534,7 @@ void thandler::draw(const bool force)
 	 *
 	 * For now we use a hack, but would be nice to rewrite it for 1.9/1.11.
 	 */
-	FOREACH(AUTO dispatcher, dispatchers_)
+	for(auto dispatcher : dispatchers_)
 	{
 		if(!first) {
 			/*
@@ -562,7 +561,7 @@ void thandler::handle_post_draw()
 	// Don't display this event since it floods the screen
 	// DBG_GUI_E << "Firing " << POST_DRAW << ".\n";
 
-	FOREACH(AUTO dispatcher, dispatchers_)
+	for(auto dispatcher : dispatchers_)
 	{
 
 		dispatcher->fire(POST_DRAW, dynamic_cast<twidget&>(*dispatcher));
@@ -573,7 +572,7 @@ void thandler::video_resize(const tpoint& new_size)
 {
 	DBG_GUI_E << "Firing: " << SDL_VIDEO_RESIZE << ".\n";
 
-	FOREACH(AUTO dispatcher, dispatchers_)
+	for(auto dispatcher : dispatchers_)
 	{
 		dispatcher->fire(SDL_VIDEO_RESIZE,
 						 dynamic_cast<twidget&>(*dispatcher),
@@ -692,7 +691,7 @@ tdispatcher* thandler::keyboard_dispatcher()
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void thandler::hat_motion(const SDL_Event& event)
@@ -783,17 +782,17 @@ tmanager::tmanager()
 
 #ifdef MAIN_EVENT_HANDLER
 	draw_interval = 30;
-	SDL_AddTimer(draw_interval, timer_sdl_draw_event, NULL);
+	SDL_AddTimer(draw_interval, timer_sdl_draw_event, nullptr);
 
 	event_poll_interval = 10;
-	SDL_AddTimer(event_poll_interval, timer_sdl_poll_events, NULL);
+	SDL_AddTimer(event_poll_interval, timer_sdl_poll_events, nullptr);
 #endif
 }
 
 tmanager::~tmanager()
 {
 	delete handler;
-	handler = NULL;
+	handler = nullptr;
 
 #ifdef MAIN_EVENT_HANDLER
 	draw_interval = 0;
@@ -842,7 +841,7 @@ void release_mouse(tdispatcher* dispatcher)
 	assert(handler);
 	assert(dispatcher);
 	if(handler->mouse_focus == dispatcher) {
-		handler->mouse_focus = NULL;
+		handler->mouse_focus = nullptr;
 	}
 }
 

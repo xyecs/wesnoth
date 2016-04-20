@@ -23,10 +23,9 @@
 #include "gui/core/window_builder/helper.hpp"
 #include "gettext.hpp"
 #include "sound.hpp"
-#include "utils/foreach.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -43,37 +42,37 @@ ttoggle_panel::ttoggle_panel()
 	, state_(ENABLED)
 	, state_num_(0)
 	, retval_(0)
-	, callback_state_change_(0)
+	, callback_state_change_(nullptr)
 	, callback_mouse_left_double_click_()
 {
 	set_wants_mouse_left_double_click();
 
-	connect_signal<event::MOUSE_ENTER>(boost::bind(
+	connect_signal<event::MOUSE_ENTER>(std::bind(
 			&ttoggle_panel::signal_handler_mouse_enter, this, _2, _3));
-	connect_signal<event::MOUSE_LEAVE>(boost::bind(
+	connect_signal<event::MOUSE_LEAVE>(std::bind(
 			&ttoggle_panel::signal_handler_mouse_leave, this, _2, _3));
 #if 0
 	connect_signal<event::LEFT_BUTTON_CLICK>(
-			boost::bind(&ttoggle_panel::signal_handler_pre_left_button_click,
+			std::bind(&ttoggle_panel::signal_handler_pre_left_button_click,
 						this,
 						_2),
 			event::tdispatcher::back_pre_child);
 #endif
-	connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_CLICK>(std::bind(
 			&ttoggle_panel::signal_handler_left_button_click, this, _2, _3));
 	connect_signal<event::LEFT_BUTTON_CLICK>(
-			boost::bind(&ttoggle_panel::signal_handler_left_button_click,
+			std::bind(&ttoggle_panel::signal_handler_left_button_click,
 						this,
 						_2,
 						_3),
 			event::tdispatcher::back_post_child);
 	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(
-			boost::bind(&ttoggle_panel::signal_handler_left_button_double_click,
+			std::bind(&ttoggle_panel::signal_handler_left_button_double_click,
 						this,
 						_2,
 						_3));
 	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(
-			boost::bind(&ttoggle_panel::signal_handler_left_button_double_click,
+			std::bind(&ttoggle_panel::signal_handler_left_button_double_click,
 						this,
 						_2,
 						_3),
@@ -91,7 +90,7 @@ unsigned ttoggle_panel::num_states() const
 void ttoggle_panel::set_child_members(
 		const std::map<std::string /* widget id */, string_map>& data)
 {
-	FOREACH(const AUTO & item, data)
+	for(const auto & item : data)
 	{
 		tcontrol* control = dynamic_cast<tcontrol*>(find(item.first, false));
 		if(control) {
@@ -366,7 +365,7 @@ ttoggle_panel_definition::tresolution::tresolution(const config& cfg)
 	, right_border(cfg["right_border"])
 {
 	// Note the order should be the same as the enum tstate in toggle_panel.hpp.
-	FOREACH(const AUTO& c, cfg.child_range("state"))
+	for(const auto& c : cfg.child_range("state"))
 	{
 		state.push_back(tstate_definition(c.child("enabled")));
 		state.push_back(tstate_definition(c.child("disabled")));
@@ -409,7 +408,7 @@ namespace implementation
 
 tbuilder_toggle_panel::tbuilder_toggle_panel(const config& cfg)
 	: tbuilder_control(cfg)
-	, grid(NULL)
+	, grid(nullptr)
 	, retval_id_(cfg["return_value_id"])
 	, retval_(cfg["return_value"])
 {

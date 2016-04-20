@@ -33,7 +33,6 @@
 #include "log.hpp"
 #include "gettext.hpp"
 
-#include <boost/foreach.hpp>
 #include <cstring>
 #include <iterator>                     // for distance, advance
 #include <new>                          // for operator new
@@ -213,7 +212,7 @@ static int impl_vconfig_get(lua_State *L)
 	if (shallow_literal || strcmp(m, "__shallow_parsed") == 0)
 	{
 		lua_newtable(L);
-		BOOST_FOREACH(const config::attribute &a, v->get_config().attribute_range()) {
+		for (const config::attribute &a : v->get_config().attribute_range()) {
 			if (shallow_literal)
 				luaW_pushscalar(L, a.second);
 			else
@@ -380,7 +379,7 @@ std::string register_gettext_metatable(lua_State *L)
 
 	static luaL_Reg const callbacks[] = {
 		{ "__call", 	    &impl_gettext},
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	luaL_setfuncs(L, callbacks, 0);
 
@@ -404,7 +403,7 @@ std::string register_tstring_metatable(lua_State *L)
 		{ "__lt",	        &impl_tstring_lt},
 		{ "__le",	        &impl_tstring_le},
 		{ "__eq",	        &impl_tstring_eq},
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	luaL_setfuncs(L, callbacks, 0);
 
@@ -427,7 +426,7 @@ std::string register_vconfig_metatable(lua_State *L)
 		{ "__len",          &impl_vconfig_size},
 		{ "__pairs",        &impl_vconfig_pairs},
 		{ "__ipairs",       &impl_vconfig_ipairs},
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	luaL_setfuncs(L, callbacks, 0);
 
@@ -574,7 +573,7 @@ void luaW_filltable(lua_State *L, config const &cfg)
 		return;
 
 	int k = 1;
-	BOOST_FOREACH(const config::any_child &ch, cfg.all_children_range())
+	for (const config::any_child &ch : cfg.all_children_range())
 	{
 		lua_createtable(L, 2, 0);
 		lua_pushstring(L, ch.key.c_str());
@@ -584,7 +583,7 @@ void luaW_filltable(lua_State *L, config const &cfg)
 		lua_rawseti(L, -2, 2);
 		lua_rawseti(L, -2, k++);
 	}
-	BOOST_FOREACH(const config::attribute &attr, cfg.attribute_range())
+	for (const config::attribute &attr : cfg.attribute_range())
 	{
 		luaW_pushscalar(L, attr.second);
 		lua_setfield(L, -2, attr.first.c_str());
@@ -790,30 +789,22 @@ vconfig luaW_checkvconfig(lua_State *L, int index, bool allow_missing)
 	return result;
 }
 
-
-#ifdef __GNUC__
-__attribute__((sentinel))
-#endif
-bool luaW_getglobal(lua_State *L, ...)
+bool luaW_getglobal(lua_State *L, const std::vector<std::string>& path)
 {
 	lua_pushglobaltable(L);
-	va_list ap;
-	va_start(ap, L);
-	while (const char *s = va_arg(ap, const char *))
+	for (const std::string& s : path)
 	{
 		if (!lua_istable(L, -1)) goto discard;
-		lua_pushstring(L, s);
+		lua_pushlstring(L, s.c_str(), s.size());
 		lua_rawget(L, -2);
 		lua_remove(L, -2);
 	}
 
 	if (lua_isnil(L, -1)) {
 		discard:
-		va_end(ap);
 		lua_pop(L, 1);
 		return false;
 	}
-	va_end(ap);
 	return true;
 }
 

@@ -24,7 +24,6 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "log.hpp"
-#include "utils/foreach.hpp"
 
 namespace gui2
 {
@@ -101,9 +100,9 @@ void tmessage::pre_show(twindow& window)
 
 void tmessage::post_show(twindow& /*window*/)
 {
-	FOREACH(AUTO & button_status, buttons_)
+	for(auto & button_status : buttons_)
 	{
-		button_status.button = NULL;
+		button_status.button = nullptr;
 	}
 }
 
@@ -134,7 +133,7 @@ void tmessage::set_button_retval(const tbutton_id button, const int retval)
 }
 
 tmessage::tbutton_status::tbutton_status()
-	: button(NULL)
+	: button(nullptr)
 	, caption()
 	, visible(twidget::tvisible::invisible)
 	, retval(twindow::NONE)

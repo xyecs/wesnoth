@@ -26,9 +26,9 @@
 #include "gui/widgets/listbox.hpp"
 #endif
 #include "gui/widgets/settings.hpp"
-#include "utils/foreach.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
+#include "video.hpp"
 
 namespace gui2
 {
@@ -96,7 +96,7 @@ void tmp_server_list::pre_show(twindow& window)
 	const std::vector<game_config::server_info>& pref_servers
 			= preferences::server_list();
 
-	FOREACH(const AUTO & server, pref_servers)
+	for(const auto & server : pref_servers)
 	{
 
 		std::map<std::string, string_map> data;
@@ -180,9 +180,9 @@ void tmp_connect::pre_show(twindow& window)
 	if(tbutton* button = find_widget<tbutton>(&window, "list", false, false)) {
 
 		connect_signal_mouse_left_click(*button,
-										boost::bind(show_server_list,
-													boost::ref(window.video()),
-													boost::ref(window),
+										std::bind(show_server_list,
+													std::ref(window.video()),
+													std::ref(window),
 													host_name_));
 	}
 }

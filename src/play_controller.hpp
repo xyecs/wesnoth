@@ -76,7 +76,7 @@ namespace wb {
 // Holds gamestate related objects
 class game_state;
 
-class play_controller : public controller_base, public events::observer, public savegame::savegame_config, quit_confirmation
+class play_controller : public controller_base, public events::observer, public quit_confirmation
 {
 public:
 	play_controller(const config& level, saved_game& state_of_game,
@@ -136,7 +136,7 @@ public:
 		gamestate().end_level_data_ = boost::none;
 	}
 	bool is_regular_game_end() const {
-		return gamestate().end_level_data_.get_ptr() != NULL;
+		return gamestate().end_level_data_.get_ptr() != nullptr;
 	}
 	const end_level_data& get_end_level_data_const() const {
 		return *gamestate().end_level_data_;
@@ -214,7 +214,7 @@ public:
 
 	actions::undo_list& get_undo_stack() { return undo_stack(); }
 
-	bool is_browsing() const OVERRIDE;
+	bool is_browsing() const override;
 	bool is_lingering() const { return linger_; }
 
 	class hotkey_handler;

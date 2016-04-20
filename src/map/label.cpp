@@ -23,8 +23,6 @@
 #include "tooltips.hpp"
 #include "formula/string_utils.hpp"
 
-#include <boost/foreach.hpp>
-
 //Our definition of map labels being obscured is if the tile is obscured,
 //or the tile below is obscured. This is because in the case where the tile
 //itself is visible, but the tile below is obscured, the bottom half of the
@@ -87,7 +85,7 @@ void map_labels::read(const config &cfg)
 {
 	clear_all();
 
-	BOOST_FOREACH(const config &i, cfg.child_range("label"))
+	for (const config &i : cfg.child_range("label"))
 	{
 		const map_location loc(i, resources::gamedata);
 		terrain_label *label = new terrain_label(*this, i);
@@ -104,7 +102,7 @@ const terrain_label* map_labels::get_label(const map_location& loc, const std::s
 		if (itor != label_map->second.end())
 			return itor->second;
 	}
-	return NULL;
+	return nullptr;
 }
 
 const terrain_label* map_labels::get_label(const map_location& loc) const
@@ -112,7 +110,7 @@ const terrain_label* map_labels::get_label(const map_location& loc) const
 	const terrain_label* res = get_label(loc, team_name());
 	// no such team label, we try global label, except if it's what we just did
 	// NOTE: This also avoid infinite recursion
-	if (res == NULL && team_name() != "") {
+	if (res == nullptr && team_name() != "") {
 		return get_label(loc, "");
 	}
 	return res;
@@ -155,7 +153,7 @@ const terrain_label* map_labels::set_label(const map_location& loc,
 					   const std::string& category,
 					   const t_string& tooltip )
 {
-	terrain_label* res = NULL;
+	terrain_label* res = nullptr;
 
 	// See if there is already a label in this location for this team.
 	// (We do not use get_label_private() here because we might need
@@ -203,7 +201,7 @@ const terrain_label* map_labels::set_label(const map_location& loc,
 		add_label(loc, res);
 
 		// Hide the old label.
-		if ( global_label != NULL )
+		if ( global_label != nullptr )
 			global_label->recalculate();
 	}
 	categories_dirty = true;
@@ -247,7 +245,7 @@ void map_labels::clear_map(label_map &m, bool force)
 
 void map_labels::clear_all()
 {
-	BOOST_FOREACH(team_label_map::value_type &m, labels_)
+	for (team_label_map::value_type &m : labels_)
 	{
 		clear_map(m.second, true);
 	}
@@ -256,9 +254,9 @@ void map_labels::clear_all()
 
 void map_labels::recalculate_labels()
 {
-	BOOST_FOREACH(team_label_map::value_type &m, labels_)
+	for (team_label_map::value_type &m : labels_)
 	{
-		BOOST_FOREACH(label_map::value_type &l, m.second)
+		for (label_map::value_type &l : m.second)
 		{
 			l.second->recalculate();
 		}
@@ -286,9 +284,9 @@ bool map_labels::visible_global_label(const map_location& loc) const
 
 void map_labels::recalculate_shroud()
 {
-	BOOST_FOREACH(team_label_map::value_type &m, labels_)
+	for (team_label_map::value_type &m : labels_)
 	{
-		BOOST_FOREACH(label_map::value_type &l, m.second)
+		for (label_map::value_type &l : m.second)
 		{
 			l.second->calculate_shroud();
 		}
@@ -301,11 +299,11 @@ const std::vector<std::string>& map_labels::all_categories() const {
 		categories.clear();
 		categories.push_back("team");
 		for(size_t i = 1; i <= resources::teams->size(); i++) {
-			categories.push_back("side:" + str_cast(i));
+			categories.push_back("side:" + std::to_string(i));
 		}
 		std::set<std::string> unique_cats;
-		BOOST_FOREACH(const team_label_map::value_type& m, labels_) {
-			BOOST_FOREACH(const label_map::value_type& l, m.second) {
+		for (const team_label_map::value_type& m : labels_) {
+			for (const label_map::value_type& l : m.second) {
 				if(l.second->category().empty()) continue;
 				unique_cats.insert("cat:" + l.second->category());
 			}
@@ -597,7 +595,7 @@ bool terrain_label::hidden() const
 {
 	// Respect user's label preferences
 	std::string category = "cat:" + category_;
-	std::string creator = "side:" + str_cast(creator_ + 1);
+	std::string creator = "side:" + std::to_string(creator_ + 1);
 	const std::vector<std::string>& hidden_categories = parent_->disp().get_disp_context().hidden_label_categories();
 
 	if(std::find(hidden_categories.begin(), hidden_categories.end(), category) != hidden_categories.end())

@@ -35,18 +35,23 @@
 #include "units/types.hpp"
 #include "variable.hpp" // needed for vconfig, scoped unit
 #include "wml_exception.hpp" // needed for FAIL
+#include "formula/callable_objects.hpp"
+#include "formula/formula.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility/in_place_factory.hpp> //needed for boost::in_place to initialize optionals
 
 #include <vector>
 
 static lg::log_domain log_config("config");
 #define ERR_CF LOG_STREAM(err, log_config)
 #define DBG_CF LOG_STREAM(debug, log_config)
+
+// Defined out of line to avoid including config in unit_filter.hpp
+config unit_filter::to_config() const {
+	return impl_->to_config();
+}
 
 ///Defined out of line to prevent including unit at unit_filter.hpp
 bool unit_filter::matches(const unit & u) const {
@@ -79,7 +84,7 @@ public:
 	}
 	virtual std::vector<const unit *> all_matches_on_map(unsigned max_matches) const {
 		std::vector<const unit *> ret;
-		BOOST_FOREACH(const unit & u, fc_.get_disp_context().units()) {
+		for(const unit & u : fc_.get_disp_context().units()) {
 			--max_matches;
 			ret.push_back(&u);
 			if(max_matches == 0) {
@@ -95,6 +100,14 @@ public:
 
 
 	virtual ~null_unit_filter_impl() {}
+
+	config to_config() const {
+		return config();
+	}
+
+	bool empty() const {
+		return true;
+	}
 
 private:
 	const filter_context & fc_;
@@ -131,7 +144,7 @@ public:
 				const vconfig& cond_filter = cond.get_child();
 
 				cond_children_.push_back(unit_filter(cond_filter, &fc_, use_flat_tod_));
-				cond_child_types_.push_back(type);			
+				cond_child_types_.push_back(type);
 			}
 			else {
 				static const int NUM_VALID_TAGS = 5;
@@ -159,6 +172,9 @@ public:
 	virtual bool matches(const unit & u, const map_location & loc, const unit * u2) const;
 	virtual std::vector<const unit *> all_matches_on_map(unsigned max_matches) const;
 	virtual unit_const_ptr first_match_on_map() const;
+	config to_config() const {
+		return vcfg.get_config();
+	}
 
 	virtual ~basic_unit_filter_impl() {}
 private:
@@ -169,7 +185,7 @@ private:
 	std::vector<unit_filter> cond_children_;
 	std::vector<conditional::TYPE> cond_child_types_;
 
-	bool internal_matches_filter(const unit & u, const map_location & loc) const;
+	bool internal_matches_filter(const unit & u, const map_location & loc, const unit* u2) const;
 };
 
 /** "Factory" method which constructs an appropriate implementation
@@ -215,13 +231,13 @@ bool basic_unit_filter_impl::matches(const unit & u, const map_location& loc, co
 		if (u2) {
 			const map_location& loc2 = u2->get_location();
 			scoped_xy_unit auto_store("other_unit", loc2.x, loc2.y, fc_.get_disp_context().units());
-			matches = internal_matches_filter(u, loc);
+			matches = internal_matches_filter(u, loc, u2);
 		} else {
-			matches = internal_matches_filter(u, loc);
+			matches = internal_matches_filter(u, loc, u2);
 		}
 	} else {
 		// If loc is invalid, then this is a recall list unit (already been scoped)
-		matches = internal_matches_filter(u, loc);
+		matches = internal_matches_filter(u, loc, nullptr);
 	}
 
 	// Handle [and], [or], and [not] with in-order precedence
@@ -240,7 +256,7 @@ bool basic_unit_filter_impl::matches(const unit & u, const map_location& loc, co
 	return matches;
 }
 
-bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_location& loc) const
+bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_location& loc, const unit* u2) const
 {
 	if (!vcfg["name"].blank() && vcfg["name"].t_str() != u.name()) {
 		return false;
@@ -323,7 +339,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		const unit_type* const type = u.variation().empty() ? &u.type() : unit_types.find(u.type().base_id());
 		assert(type);
 
-		BOOST_FOREACH(const std::string& variation_id, utils::split(vcfg["has_variation"])) {
+		for (const std::string& variation_id : utils::split(vcfg["has_variation"])) {
 			if (type->has_variation(variation_id)) {
 				match = true;
 				break;
@@ -336,7 +352,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 	{
 		bool match = false;
 
-		BOOST_FOREACH(const std::string& ability_id, utils::split(vcfg["ability"])) {
+		for (const std::string& ability_id : utils::split(vcfg["ability"])) {
 			if (u.has_ability_by_id(ability_id)) {
 				match = true;
 				break;
@@ -358,7 +374,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 
 	if (!vcfg["side"].empty() && vcfg["side"].to_int(-999) != u.side()) {
 		std::vector<std::string> sides = utils::split(vcfg["side"]);
-		const std::string u_side = str_cast(u.side());
+		const std::string u_side = std::to_string(u.side());
 		if (std::find(sides.begin(), sides.end(), u_side) == sides.end()) {
 			return false;
 		}
@@ -369,7 +385,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		bool status_found = false;
 		std::map<std::string, std::string> states_map = u.get_states();
 
-		BOOST_FOREACH (const std::string status, utils::split(vcfg["status"])) {
+		for (const std::string status : utils::split(vcfg["status"])) {
 			if (states_map[status] == "yes") {
 				status_found = true;
 				break;
@@ -381,7 +397,21 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		}
 	}
 
-	if (!vcfg["has_weapon"].blank()) {
+	if (vcfg.has_child("has_attack")) {
+		const vconfig& weap_filter = vcfg.child("has_attack");
+		bool has_weapon = false;
+		const std::vector<attack_type>& attacks = u.attacks();
+		for(std::vector<attack_type>::const_iterator i = attacks.begin();
+			i != attacks.end(); ++i) {
+			if(i->matches_filter(weap_filter.get_parsed_config())) {
+				has_weapon = true;
+				break;
+			}
+		}
+		if(!has_weapon) {
+			return false;
+		}
+	} else if (!vcfg["has_weapon"].blank()) {
 		std::string weapon = vcfg["has_weapon"];
 		bool has_weapon = false;
 		const std::vector<attack_type>& attacks = u.attacks();
@@ -430,7 +460,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 	// filter only => not for us
 	// unit only => not filtered
 	config unit_cfg; // No point in serializing the unit once for each [filter_wml]!
-	BOOST_FOREACH(const vconfig& wmlcfg, vcfg.get_children("filter_wml")) {
+	for (const vconfig& wmlcfg : vcfg.get_children("filter_wml")) {
 			config fwml = wmlcfg.get_parsed_config();
 			/* Check if the filter only cares about variables.
 			   If so, no need to serialize the whole unit. */
@@ -449,7 +479,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 			}
 	}
 
-	BOOST_FOREACH(const vconfig& vision, vcfg.get_children("filter_vision")) {
+	for (const vconfig& vision : vcfg.get_children("filter_vision")) {
 		std::set<int> viewers;
 
 		// Use standard side filter
@@ -458,7 +488,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		viewers.insert(sides.begin(), sides.end());
 
 		bool found = false;
-		BOOST_FOREACH (const int viewer, viewers) {
+		for (const int viewer : viewers) {
 			bool fogged = fc_.get_disp_context().teams()[viewer - 1].fogged(loc);
 			bool hiding = u.invisible(loc/*, false(?) */);
 			bool unit_hidden = fogged || hiding;
@@ -475,7 +505,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		map_location adjacent[6];
 		get_adjacent_tiles(loc, adjacent);
 
-		BOOST_FOREACH(const vconfig& adj_cfg, vcfg.get_children("filter_adjacent")) {
+		for (const vconfig& adj_cfg : vcfg.get_children("filter_adjacent")) {
 			int match_count=0;
 			unit_filter filt(adj_cfg, &fc_, use_flat_tod_);
 
@@ -518,7 +548,7 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 			{
 				variable_access_const vi = gd->get_variable_access_read(vcfg["find_in"]);
 				bool found_id = false;
-				BOOST_FOREACH(const config& c, vi.as_array())
+				for (const config& c : vi.as_array())
 				{
 					if(c["id"] == u.id())
 						found_id = true;
@@ -535,7 +565,22 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 		}
 	}
 	if (!vcfg["formula"].blank()) {
-		if (!u.formula_manager().matches_filter(vcfg["formula"], loc, u)) {
+		try {
+			const unit_callable main(loc,u);
+			game_logic::map_formula_callable callable(&main);
+			if (u2) {
+				boost::intrusive_ptr<unit_callable> secondary(new unit_callable(*u2));
+				callable.add("other", variant(secondary.get()));
+				// It's not destroyed upon scope exit because the variant holds a reference
+			}
+			const game_logic::formula form(vcfg["formula"]);
+			if(!form.evaluate(callable).as_bool()) {
+				return false;
+			}
+			return true;
+		} catch(game_logic::formula_error& e) {
+			lg::wml_error() << "Formula error in unit filter: " << e.type << " at " << e.filename << ':' << e.line << ")\n";
+			// Formulae with syntax errors match nothing
 			return false;
 		}
 	}
@@ -552,8 +597,8 @@ bool basic_unit_filter_impl::internal_matches_filter(const unit & u, const map_l
 
 std::vector<const unit *> basic_unit_filter_impl::all_matches_on_map(unsigned max_matches) const {
 	std::vector<const unit *> ret;
-	BOOST_FOREACH(const unit & u, fc_.get_disp_context().units()) {
-		if (matches(u, u.get_location(), NULL)) {
+	for (const unit & u : fc_.get_disp_context().units()) {
+		if (matches(u, u.get_location(), nullptr)) {
 			if(max_matches == 0) {
 				return ret;
 			}
@@ -567,7 +612,7 @@ std::vector<const unit *> basic_unit_filter_impl::all_matches_on_map(unsigned ma
 unit_const_ptr basic_unit_filter_impl::first_match_on_map() const {
 	const unit_map & units = fc_.get_disp_context().units();
 	for(unit_map::const_iterator u = units.begin(); u != units.end(); u++) {
-		if (matches(*u,u->get_location(),NULL)) {
+		if (matches(*u,u->get_location(),nullptr)) {
 			return u.get_shared_ptr();
 		}
 	}

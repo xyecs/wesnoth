@@ -35,10 +35,9 @@
 #include "marked-up_text.hpp"
 #include "resources.hpp"
 #include "team.hpp"
-#include "utils/foreach.hpp"
 
 #include <vector>
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 #include <boost/shared_ptr.hpp>
 
 static lg::log_domain log_gui("gui/dialogs/mp_change_control");
@@ -86,7 +85,7 @@ void dialog_view_callback(twidget& caller)
 class tmp_change_control::model
 {
 public:
-	model() : sides_list(NULL), nicks_list(NULL), sides(), nicks()
+	model() : sides_list(nullptr), nicks_list(nullptr), sides(), nicks()
 	{
 	}
 
@@ -114,7 +113,7 @@ public:
 				<< "\" label: \"" << label << "\")\n";
 		std::map<std::string, string_map> data;
 		string_map item;
-		item["id"] = std::string("side_") + str_cast(side_num);
+		item["id"] = std::string("side_") + std::to_string(side_num);
 		item["label"] = label;
 		item["use_markup"] = "true";
 		data.insert(std::make_pair("side", item));
@@ -192,7 +191,7 @@ public:
 		int i = 0; // because we need to know which row contains the controlling
 				   // player
 
-		FOREACH(const AUTO & nick, nicks)
+		for(const auto & nick : nicks)
 		{
 			if(side_number_ <= static_cast<int>(resources::teams->size())
 			   && resources::teams->at(side_number_ - 1).current_player()
@@ -247,7 +246,7 @@ public:
 		for(int side = 1; side <= sides; ++side) {
 			if(!resources::teams->at(side - 1).hidden()) {
 				string_map symbols;
-				symbols["side"] = str_cast(side);
+				symbols["side"] = std::to_string(side);
 				std::string side_str = vgettext("Side $side", symbols);
 				side_str = font::span_color(team::get_side_color(side))
 						   + side_str + "</span>";
@@ -353,17 +352,17 @@ public:
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 		connect_signal_notify_modified(
 				*model_.sides_list,
-				boost::bind(&tmp_change_control::view::
+				std::bind(&tmp_change_control::view::
 									 handle_sides_list_item_clicked,
 							this,
-							boost::ref(window)));
+							std::ref(window)));
 
 		connect_signal_notify_modified(
 				*model_.nicks_list,
-				boost::bind(&tmp_change_control::view::
+				std::bind(&tmp_change_control::view::
 									 handle_nicks_list_item_clicked,
 							this,
-							boost::ref(window)));
+							std::ref(window)));
 #else
 		model_.sides_list->set_callback_value_change(
 				dialog_view_callback<tmp_change_control,

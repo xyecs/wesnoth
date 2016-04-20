@@ -153,6 +153,7 @@ class game_lua_kernel : public lua_kernel_base
 	int intf_label(lua_State *L);
 	int intf_redraw(lua_State *L);
 	int intf_replace_schedule(lua_State *l);
+	int intf_set_time_of_day(lua_State *L);
 	int intf_scroll(lua_State *L);
 	int intf_get_all_vars(lua_State *L);
 	int impl_theme_item(lua_State *L, std::string name);
@@ -163,6 +164,11 @@ class game_lua_kernel : public lua_kernel_base
 	int intf_fire_event(lua_State *L);
 	int intf_fire_wml_menu_item(lua_State *L);
 	int intf_teleport(lua_State *L);
+	int intf_remove_sound_source(lua_State *L);
+	int intf_add_sound_source(lua_State *L);
+	int intf_get_sound_source(lua_State *L);
+	int intf_log(lua_State *L);
+	int intf_toggle_fog(lua_State *L, const bool clear);
 
 	//private helpers
 	std::string synced_state();

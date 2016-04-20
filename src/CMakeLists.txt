@@ -109,6 +109,7 @@ set(game-external-libs
 	${common-external-libs}
 	${Boost_SYSTEM_LIBRARIES}
 	${Boost_RANDOM_LIBRARY}
+	${Boost_THREAD_LIBRARY}
 	${sdl_image-lib}
 	${sdl_mixer-lib}
 	${sdl_ttf-lib}
@@ -392,6 +393,7 @@ set_source_files_properties(
 	desktop/notifications.cpp
 	network.cpp
 	network_worker.cpp
+	tests/test_lua.cpp
 	PROPERTIES
 		COMPILE_FLAGS "${CXX_FLAG_NO_OLD_STYLE_CAST}"
 )
@@ -545,6 +547,7 @@ add_library(wesnoth-gui_tooltip
 # behavior of the widgets. It also contains the builder code
 # for the widgets since the code has inter dependencies.
 set(wesnoth-gui_widget_SRC
+	gui/dialogs/drop_down_list.cpp
 	gui/widgets/button.cpp
 	gui/widgets/combobox.cpp
 	gui/widgets/container.cpp
@@ -818,7 +821,6 @@ set(wesnoth-main_SRC
 	gui/dialogs/depcheck_confirm_change.cpp
 	gui/dialogs/depcheck_select_new.cpp
 	gui/dialogs/dialog.cpp
-	gui/dialogs/drop_down_list.cpp
 	gui/dialogs/edit_label.cpp
 	gui/dialogs/editor/custom_tod.cpp
 	gui/dialogs/editor/edit_label.cpp
@@ -838,6 +840,7 @@ set(wesnoth-main_SRC
 	gui/dialogs/gamestate_inspector.cpp
 	gui/dialogs/label_settings.cpp
 	gui/dialogs/language_selection.cpp
+	gui/dialogs/loadscreen.cpp
 	gui/dialogs/lobby/data.cpp
 	gui/dialogs/lobby/info.cpp
 	gui/dialogs/lobby/lobby.cpp
@@ -882,7 +885,6 @@ set(wesnoth-main_SRC
 	hotkey/hotkey_handler.cpp
 	hotkey/hotkey_handler_sp.cpp
 	hotkey/hotkey_handler_mp.cpp
-	hotkey/hotkey_handler_replay.cpp
 	intro.cpp
 	leader_scroll_dialog.cpp
 	map/map.cpp
@@ -934,6 +936,7 @@ set(wesnoth-main_SRC
 	scripting/lua_common.cpp
 	scripting/lua_cpp_function.cpp
 	scripting/lua_fileops.cpp
+	scripting/lua_formula_bridge.cpp
 	scripting/lua_gui2.cpp
 	scripting/lua_kernel_base.cpp
 	scripting/lua_map_location_ops.cpp
@@ -979,8 +982,11 @@ set(wesnoth-main_SRC
 	units/helper.cpp
 	units/id.cpp
 	units/map.cpp
+	units/race.cpp
 	units/types.cpp
 	utils/sha1.cpp
+	utils/context_free_grammar_generator.cpp
+	utils/markov_generator.cpp
 	variable.cpp
 	variable_info.cpp
 	whiteboard/action.cpp
@@ -1028,7 +1034,6 @@ set(libwesnoth-game_STAT_SRC
 	game_end_exceptions.cpp
 	key.cpp
 	language.cpp
-	loadscreen.cpp
 	lobby_preferences.cpp
 	utils/make_enum.cpp
 	map/label.cpp
@@ -1038,7 +1043,6 @@ set(libwesnoth-game_STAT_SRC
 	pathutils.cpp
 	preferences.cpp
 	preferences_display.cpp
-	race.cpp
 	quit_confirmation.cpp
 	reports.cpp
 	show_dialog.cpp
@@ -1179,7 +1183,6 @@ set(wesnothd_SRC
 	server/forum_user_handler.cpp
 	server/sample_user_handler.cpp
 	${network_implementation_files}
-	loadscreen_empty.cpp
 )
 
 add_executable(wesnothd WIN32
@@ -1204,7 +1207,6 @@ set(campaignd_SRC
 	campaign_server/campaign_server.cpp
 	server/input_stream.cpp
 	${network_implementation_files}
-	loadscreen_empty.cpp
 )
 
 check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME_RT)
@@ -1238,7 +1240,6 @@ set(exploder_SRC
 	tools/dummy_video.cpp
 	sdl/utils.cpp
 	tracer.cpp
-	loadscreen_empty.cpp
 )
 
 add_executable(exploder ${exploder_SRC})
@@ -1259,7 +1260,6 @@ set(cutter_SRC
 	tools/dummy_video.cpp
 	sdl/utils.cpp
 	tracer.cpp
-	loadscreen_empty.cpp
 )
 
 add_executable(cutter ${cutter_SRC})
@@ -1281,7 +1281,6 @@ set(schema_generator_SRC
 	tools/schema/tag.cpp
 	filesystem_boost.cpp
 	filesystem_common.cpp
-	loadscreen_empty.cpp
 )
 
 add_executable(schema_generator ${schema_generator_SRC})
@@ -1305,7 +1304,6 @@ set(schema_validator_SRC
 	filesystem_common.cpp
 	config_cache.cpp
 	utils/sha1.cpp
-	loadscreen_empty.cpp
 )
 
 add_executable(schema_validator ${schema_validator_SRC})
@@ -1330,7 +1328,6 @@ set(wesmage_SRC
 	tools/exploder_utils.cpp
 	sdl/utils.cpp
 	tracer.cpp
-	loadscreen_empty.cpp
 )
 
 add_executable(wesmage ${wesmage_SRC})
@@ -1484,7 +1481,6 @@ if(ENABLE_TESTS)
 			tools/exploder_utils.cpp
 			sdl/utils.cpp
 			tracer.cpp
-			loadscreen_empty.cpp
 		)
 
 		add_executable(create_images ${create_images_SRC})

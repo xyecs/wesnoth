@@ -21,24 +21,6 @@
 #include "map/location.hpp"
 #include "log.hpp"
 
-#include <boost/foreach.hpp>
-
-bool unit_formula_manager::matches_filter(const std::string & cfg_formula, const map_location & loc, const unit & me)
-{
-	try {
-		const unit_callable callable(loc,me);
-		const game_logic::formula form(cfg_formula);
-		if(!form.evaluate(callable).as_bool()) {///@todo use formula_ai
-			return false;
-		}
-		return true;
-	} catch(game_logic::formula_error& e) {
-		lg::wml_error() << "Formula error in unit filter: " << e.type << " at " << e.filename << ':' << e.line << ")\n";
-		// Formulae with syntax errors match nothing
-		return false;
-	}
-}
-
 void unit_formula_manager::add_formula_var(std::string str, variant var)
 {
 	if(!formula_vars_) formula_vars_ = new game_logic::map_formula_callable;
@@ -56,7 +38,7 @@ void unit_formula_manager::read(const config & ai)
 		formula_vars_ = new game_logic::map_formula_callable;
 
 		variant var;
-		BOOST_FOREACH(const config::attribute &i, ai_vars.attribute_range()) {
+		for (const config::attribute &i : ai_vars.attribute_range()) {
 			var.serialize_from_string(i.second);
 			formula_vars_->add(i.first, var);
 		}

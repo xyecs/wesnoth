@@ -23,7 +23,7 @@
 #include "gettext.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -141,7 +141,7 @@ tbuilder_scrollbar_panel::tbuilder_scrollbar_panel(const config& cfg)
 			  get_scrollbar_mode(cfg["vertical_scrollbar_mode"]))
 	, horizontal_scrollbar_mode(
 			  get_scrollbar_mode(cfg["horizontal_scrollbar_mode"]))
-	, grid(NULL)
+	, grid(nullptr)
 {
 	const config& definition = cfg.child("definition");
 

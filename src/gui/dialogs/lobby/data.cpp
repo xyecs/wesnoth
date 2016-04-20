@@ -24,7 +24,6 @@
 #include "map/map.hpp"
 #include "map/exception.hpp"
 #include "terrain/type_data.hpp"
-#include "utils/foreach.hpp"
 #include "wml_exception.hpp"
 
 #include <iterator>
@@ -62,7 +61,7 @@ void chat_log::add_message(const time_t& timestamp,
 
 void chat_log::add_message(const std::string& user, const std::string& message)
 {
-	add_message(time(NULL), user, message);
+	add_message(time(nullptr), user, message);
 }
 
 void chat_log::clear()
@@ -92,7 +91,7 @@ void room_info::remove_member(const std::string& user)
 void room_info::process_room_members(const config& data)
 {
 	members_.clear();
-	FOREACH(const AUTO & m, data.child_range("member"))
+	for(const auto & m : data.child_range("member"))
 	{
 		members_.insert(m["name"]);
 	}
@@ -110,7 +109,7 @@ user_info::user_info(const config& c)
 }
 
 void user_info::update_state(int selected_game_id,
-							 const room_info* current_room /*= NULL*/)
+							 const room_info* current_room /*= nullptr*/)
 {
 	if(game_id != 0) {
 		if(game_id == selected_game_id) {
@@ -119,7 +118,7 @@ void user_info::update_state(int selected_game_id,
 			state = GAME;
 		}
 	} else {
-		if(current_room != NULL && current_room->is_member(name)) {
+		if(current_room != nullptr && current_room->is_member(name)) {
 			state = SEL_ROOM;
 		} else {
 			state = LOBBY;
@@ -224,7 +223,7 @@ game_info::game_info(const config& game, const config& game_config)
 	map_info = era;
 
 	if(!game.child_or_empty("modification").empty()) {
-		BOOST_FOREACH(const config &cfg, game.child_range("modification")) {
+		for(const config &cfg : game.child_range("modification")) {
 			if (cfg["require_modification"].to_bool(false)) {
 				const config &mod = game_config.find_child("modification", "id",
 														   cfg["id"]);
@@ -287,7 +286,7 @@ game_info::game_info(const config& game, const config& game_config)
 				   = game_config.child("multiplayer_hashes")) {
 					std::string hash = game["hash"];
 					bool hash_found = false;
-					FOREACH(const AUTO & i, hashes.attribute_range())
+					for(const auto & i : hashes.attribute_range())
 					{
 						if(i.first == game["mp_scenario"] && i.second == hash) {
 							hash_found = true;
@@ -392,7 +391,7 @@ game_filter_stack::game_filter_stack() : filters_()
 
 game_filter_stack::~game_filter_stack()
 {
-	FOREACH(AUTO f, filters_)
+	for(auto f : filters_)
 	{
 		delete f;
 	}
@@ -405,7 +404,7 @@ void game_filter_stack::append(game_filter_base* f)
 
 void game_filter_stack::clear()
 {
-	FOREACH(AUTO f, filters_)
+	for(auto f : filters_)
 	{
 		delete f;
 	}
@@ -414,7 +413,7 @@ void game_filter_stack::clear()
 
 bool game_filter_and_stack::match(const game_info& game) const
 {
-	FOREACH(AUTO f, filters_)
+	for(auto f : filters_)
 	{
 		if(!f->match(game))
 			return false;

@@ -107,7 +107,7 @@ class editor_controller : public controller_base,
 		hotkey::ACTION_STATE get_action_state(hotkey::HOTKEY_COMMAND command, int index) const;
 
 		/** command_executor override */
-		bool execute_command(const hotkey::hotkey_command& command, int index = -1);
+		bool execute_command(const hotkey::hotkey_command& command, int index = -1, bool press=true);
 
 		/** controller_base override */
 		void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& disp);
@@ -117,6 +117,12 @@ class editor_controller : public controller_base,
 
 		/** Show the preferences dialog */
 		void preferences();
+
+		/** Handle hotkeys to scroll map */
+		void scroll_up(bool on);
+		void scroll_down(bool on);
+		void scroll_left(bool on);
+		void scroll_right(bool on);
 
 		/** Grid toggle */
 		void toggle_grid();
@@ -171,13 +177,13 @@ class editor_controller : public controller_base,
 
 		/**
 		 * Perform an action, then delete the action object.
-		 * The pointer can be NULL, in which case nothing will happen.
+		 * The pointer can be nullptr, in which case nothing will happen.
 		 */
 		void perform_delete(editor_action* action);
 
 		/**
 		 * Peform an action on the current map_context, then refresh the display
-		 * and delete the pointer. The pointer can be NULL, in which case nothing will happen.
+		 * and delete the pointer. The pointer can be nullptr, in which case nothing will happen.
 		 */
 		void perform_refresh_delete(editor_action* action, bool drag_part = false);
 

@@ -25,9 +25,9 @@ class formula_expression {
 public:
 	formula_expression() : name_("") {}
 	virtual ~formula_expression() {}
-	variant evaluate(const formula_callable& variables, formula_debugger *fdb = NULL) const {
+	variant evaluate(const formula_callable& variables, formula_debugger *fdb = nullptr) const {
 		call_stack_manager manager(name_);
-		if (fdb!=NULL) {
+		if (fdb!=nullptr) {
 			return evaluate_arg_callback(*fdb,*this,variables);
 		} else {
 			return execute(variables,fdb);
@@ -38,7 +38,7 @@ public:
 	const char* get_name() const { return name_; }
 	virtual std::string str() const = 0;
 private:
-	virtual variant execute(const formula_callable& variables, formula_debugger *fdb = NULL) const = 0;
+	virtual variant execute(const formula_callable& variables, formula_debugger *fdb = nullptr) const = 0;
 	const char* name_;
 	friend class formula_debugger;
 };
@@ -80,6 +80,8 @@ class key_value_pair : public formula_callable {
 	void get_inputs(std::vector<game_logic::formula_input>* inputs) const;
 public:
 	explicit key_value_pair(const variant& key, const variant& value) : key_(key), value_(value) {}
+	
+	void serialize_to_string(std::string& str) const;
 };
 
 class formula_function_expression : public function_expression {
@@ -96,38 +98,48 @@ private:
 typedef boost::shared_ptr<function_expression> function_expression_ptr;
 
 class formula_function {
+protected:
 	std::string name_;
+public:
+	formula_function(const std::string name) : name_(name) {}
+	virtual function_expression_ptr generate_function_expression(const std::vector<expression_ptr>& args) const = 0;
+	virtual ~formula_function() {}
+};
+
+class user_formula_function : public formula_function {
 	const_formula_ptr formula_;
 	const_formula_ptr precondition_;
 	std::vector<std::string> args_;
 public:
-	formula_function() :
-		name_(),
-		formula_(),
-		precondition_(),
-		args_()
-	{
-	}
-
-	formula_function(const std::string& name, const_formula_ptr formula, const_formula_ptr precondition, const std::vector<std::string>& args) : name_(name), formula_(formula), precondition_(precondition), args_(args)
+	user_formula_function(const std::string& name, const_formula_ptr formula, const_formula_ptr precondition, const std::vector<std::string>& args)
+		: formula_function(name)
+		, formula_(formula)
+		, precondition_(precondition)
+		, args_(args)
 	{}
 
 	function_expression_ptr generate_function_expression(const std::vector<expression_ptr>& args) const;
 };
 
-class function_symbol_table {
-	std::map<std::string, formula_function> custom_formulas_;
+template<typename T>
+class builtin_formula_function : public formula_function {
 public:
-	function_symbol_table() :
-		custom_formulas_()
-	{
+	builtin_formula_function(const std::string& name) : formula_function(name) {}
+	function_expression_ptr generate_function_expression(const std::vector<expression_ptr>& args) const {
+		return function_expression_ptr(new T(args));
 	}
+};
 
-	virtual ~function_symbol_table() {}
-	virtual void add_formula_function(const std::string& name, const_formula_ptr formula, const_formula_ptr precondition, const std::vector<std::string>& args);
-	virtual expression_ptr create_function(const std::string& fn,
-					                       const std::vector<expression_ptr>& args) const;
+typedef boost::shared_ptr<formula_function> formula_function_ptr;
+typedef std::map<std::string, formula_function_ptr> functions_map;
+
+class function_symbol_table {
+	functions_map custom_formulas_;
+public:
+	void add_function(const std::string& name, formula_function_ptr fcn);
+	expression_ptr create_function(const std::string& fn, const std::vector<expression_ptr>& args) const;
 	std::vector<std::string> get_function_names() const;
+	bool empty() {return custom_formulas_.empty();}
 };
 
 expression_ptr create_function(const std::string& fn,
@@ -161,7 +173,7 @@ public:
 		}
 	}
 private:
-	virtual variant execute(const formula_callable& variables, formula_debugger *fdb = NULL) const
+	virtual variant execute(const formula_callable& variables, formula_debugger *fdb = nullptr) const
 	{
 		if (arg_) {
 			return arg_->evaluate(variables,fdb);

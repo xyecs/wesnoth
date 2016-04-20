@@ -270,7 +270,7 @@ frame_builder::frame_builder() :
 	auto_vflip_(t_unset),
 	auto_hflip_(t_unset),
 	primary_frame_(t_unset),
-	drawing_layer_(str_cast(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST))
+	drawing_layer_(std::to_string(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST))
 {}
 
 frame_builder::frame_builder(const config& cfg,const std::string& frame_string) :
@@ -603,11 +603,11 @@ std::vector<std::string> frame_parsed_parameters::debug_strings() const {
 	if (!sound_.empty()) v.push_back("sound="+sound_);
 	if (!text_.empty()) {
 		v.push_back("text="+text_);
-		v.push_back("text_color="+str_cast<Uint32>(text_color_));
+		v.push_back("text_color="+std::to_string(text_color_));
 	}
 	if (!blend_ratio_.get_original().empty()) {
 		v.push_back("blend_ratio="+blend_ratio_.get_original());
-		v.push_back("blend_with="+str_cast<Uint32>(blend_with_));
+		v.push_back("blend_with="+std::to_string(blend_with_));
 	}
 	if (!highlight_ratio_.get_original().empty()) v.push_back("highlight_ratio="+highlight_ratio_.get_original());
 	if (!offset_.get_original().empty()) v.push_back("offset="+offset_.get_original());
@@ -667,7 +667,7 @@ void unit_frame::redraw(const int frame_time,bool on_start_time,bool in_scope_of
 	}
 	const int x = static_cast<int>(tmp_offset * xdst + (1.0-tmp_offset) * xsrc) + d2;
 	const int y = static_cast<int>(tmp_offset * ydst + (1.0-tmp_offset) * ysrc) + d2;
-	if (image != NULL) {
+	if (image != nullptr) {
 #ifdef LOW_MEM
 		bool facing_west = false;
 #else
@@ -804,7 +804,7 @@ std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const 
 						image::SCALED_TO_ZOOM
 						);
 			}
-			if(image != NULL) {
+			if(image != nullptr) {
 				w = image->w;
 				h = image->h;
 			}

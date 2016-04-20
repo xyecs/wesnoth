@@ -25,13 +25,12 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "marked-up_text.hpp"
-#include "utils/foreach.hpp"
 #include "hotkey/hotkey_item.hpp"
 #include "formatter.hpp"
 #include "gettext.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #include <iomanip>
 
@@ -52,19 +51,19 @@ tcontrol::tcontrol(const unsigned canvas_count)
 	, tooltip_()
 	, help_message_()
 	, canvas_(canvas_count)
-	, config_(NULL)
+	, config_(nullptr)
 	, renderer_()
 	, text_maximum_width_(0)
 	, text_alignment_(PANGO_ALIGN_LEFT)
 	, shrunken_(false)
 {
-	connect_signal<event::SHOW_TOOLTIP>(boost::bind(
+	connect_signal<event::SHOW_TOOLTIP>(std::bind(
 			&tcontrol::signal_handler_show_tooltip, this, _2, _3, _5));
 
-	connect_signal<event::SHOW_HELPTIP>(boost::bind(
+	connect_signal<event::SHOW_HELPTIP>(std::bind(
 			&tcontrol::signal_handler_show_helptip, this, _2, _3, _5));
 
-	connect_signal<event::NOTIFY_REMOVE_TOOLTIP>(boost::bind(
+	connect_signal<event::NOTIFY_REMOVE_TOOLTIP>(std::bind(
 			&tcontrol::signal_handler_notify_remove_tooltip, this, _2, _3));
 }
 
@@ -79,7 +78,7 @@ tcontrol::tcontrol(const implementation::tbuilder_control& builder,
 	, tooltip_(builder.tooltip)
 	, help_message_(builder.help)
 	, canvas_(canvas_count)
-	, config_(NULL)
+	, config_(nullptr)
 	, renderer_()
 	, text_maximum_width_(0)
 	, text_alignment_(PANGO_ALIGN_LEFT)
@@ -87,13 +86,13 @@ tcontrol::tcontrol(const implementation::tbuilder_control& builder,
 {
 	definition_load_configuration(control_type);
 
-	connect_signal<event::SHOW_TOOLTIP>(boost::bind(
+	connect_signal<event::SHOW_TOOLTIP>(std::bind(
 			&tcontrol::signal_handler_show_tooltip, this, _2, _3, _5));
 
-	connect_signal<event::SHOW_HELPTIP>(boost::bind(
+	connect_signal<event::SHOW_HELPTIP>(std::bind(
 			&tcontrol::signal_handler_show_helptip, this, _2, _3, _5));
 
-	connect_signal<event::NOTIFY_REMOVE_TOOLTIP>(boost::bind(
+	connect_signal<event::NOTIFY_REMOVE_TOOLTIP>(std::bind(
 			&tcontrol::signal_handler_notify_remove_tooltip, this, _2, _3));
 }
 
@@ -251,7 +250,7 @@ tpoint tcontrol::calculate_best_size() const
 void tcontrol::place(const tpoint& origin, const tpoint& size)
 {
 	// resize canvasses
-	FOREACH(AUTO & canvas, canvas_)
+	for(auto & canvas : canvas_)
 	{
 		canvas.set_width(size.x);
 		canvas.set_height(size.y);
@@ -287,7 +286,7 @@ twidget* tcontrol::find_at(const tpoint& coordinate, const bool must_be_active)
 	return (twidget::find_at(coordinate, must_be_active)
 			&& (!must_be_active || get_active()))
 				   ? this
-				   : NULL;
+				   : nullptr;
 }
 
 const twidget* tcontrol::find_at(const tpoint& coordinate,
@@ -296,7 +295,7 @@ const twidget* tcontrol::find_at(const tpoint& coordinate,
 	return (twidget::find_at(coordinate, must_be_active)
 			&& (!must_be_active || get_active()))
 				   ? this
-				   : NULL;
+				   : nullptr;
 }
 
 twidget* tcontrol::find(const std::string& id, const bool must_be_active)
@@ -304,7 +303,7 @@ twidget* tcontrol::find(const std::string& id, const bool must_be_active)
 	return (twidget::find(id, must_be_active)
 			&& (!must_be_active || get_active()))
 				   ? this
-				   : NULL;
+				   : nullptr;
 }
 
 const twidget* tcontrol::find(const std::string& id, const bool must_be_active)
@@ -313,7 +312,7 @@ const twidget* tcontrol::find(const std::string& id, const bool must_be_active)
 	return (twidget::find(id, must_be_active)
 			&& (!must_be_active || get_active()))
 				   ? this
-				   : NULL;
+				   : nullptr;
 }
 
 void tcontrol::set_definition(const std::string& definition)
@@ -368,7 +367,7 @@ void tcontrol::update_canvas()
 	const int max_height = get_text_maximum_height();
 
 	// set label in canvases
-	FOREACH(AUTO & canvas, canvas_)
+	for(auto & canvas : canvas_)
 	{
 		canvas.set_variable("text", variant(label_));
 		canvas.set_variable("text_markup", variant(use_markup_));

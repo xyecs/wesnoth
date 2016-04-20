@@ -62,15 +62,15 @@ public:
 	/** See @ref twidget::child_populate_dirty_list. */
 	virtual void
 	child_populate_dirty_list(twindow& caller,
-							  const std::vector<twidget*>& call_stack) OVERRIDE;
+							  const std::vector<twidget*>& call_stack) override;
 
 	/** See @ref tcontainer_::set_self_active. */
-	virtual void set_self_active(const bool active) OVERRIDE;
+	virtual void set_self_active(const bool active) override;
 
 	bool empty() const;
 
 	/** See @ref twidget::layout_children. */
-	virtual void layout_children() OVERRIDE;
+	virtual void layout_children() override;
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
@@ -89,7 +89,7 @@ public:
 		return selected_item_;
 	}
 
-	void set_selection_change_callback(boost::function<void(twidget&)> callback)
+	void set_selection_change_callback(std::function<void(twidget&)> callback)
 	{
 		selection_change_callback_ = callback;
 	}
@@ -124,7 +124,7 @@ private:
 
 	ttree_view_node* selected_item_;
 
-	boost::function<void(twidget&)> selection_change_callback_;
+	std::function<void(twidget&)> selection_change_callback_;
 
 	/**
 	 * Resizes the content.
@@ -153,7 +153,7 @@ private:
 	virtual void finalize_setup();
 
 	/** See @ref tcontrol::get_control_type. */
-	virtual const std::string& get_control_type() const OVERRIDE;
+	virtual const std::string& get_control_type() const override;
 
 	/***** ***** ***** signal handlers ***** ****** *****/
 

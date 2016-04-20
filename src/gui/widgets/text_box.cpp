@@ -22,9 +22,8 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "game_preferences.hpp"
-#include "utils/foreach.hpp"
 #include "serialization/unicode.hpp"
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -107,13 +106,13 @@ ttext_box::ttext_box()
 {
 	set_wants_mouse_left_double_click();
 
-	connect_signal<event::MOUSE_MOTION>(boost::bind(
+	connect_signal<event::MOUSE_MOTION>(std::bind(
 			&ttext_box::signal_handler_mouse_motion, this, _2, _3, _5));
-	connect_signal<event::LEFT_BUTTON_DOWN>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_DOWN>(std::bind(
 			&ttext_box::signal_handler_left_button_down, this, _2, _3));
-	connect_signal<event::LEFT_BUTTON_UP>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_UP>(std::bind(
 			&ttext_box::signal_handler_left_button_up, this, _2, _3));
-	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(std::bind(
 			&ttext_box::signal_handler_left_button_double_click, this, _2, _3));
 }
 
@@ -168,7 +167,7 @@ void ttext_box::update_canvas()
 	const int max_width = get_text_maximum_width();
 	const int max_height = get_text_maximum_height();
 
-	FOREACH(AUTO & tmp, canvas())
+	for(auto & tmp : canvas())
 	{
 
 		tmp.set_variable("text", variant(get_value()));
@@ -264,7 +263,7 @@ void ttext_box::update_offsets()
 
 	// Since this variable doesn't change set it here instead of in
 	// update_canvas().
-	FOREACH(AUTO & tmp, canvas())
+	for(auto & tmp : canvas())
 	{
 		tmp.set_variable("text_font_height", variant(text_height_));
 	}

@@ -30,7 +30,6 @@
 #include "gui/widgets/helper.hpp"
 #include "sdl/rect.hpp"
 #include "text.hpp"
-#include "utils/foreach.hpp"
 #include "video.hpp"
 #include "wml_exception.hpp"
 
@@ -1181,7 +1180,7 @@ void timage::draw(surface& canvas,
 					for(int y = 0; y < rows; ++y) {
 						const SDL_Rect dest = sdl::create_rect(
 								x * image_->w, y * image_->h, 0, 0);
-						blit_surface(image_, NULL, surf, &dest);
+						blit_surface(image_, nullptr, surf, &dest);
 					}
 				}
 
@@ -1512,11 +1511,11 @@ void tcanvas::blit(surface& surf, SDL_Rect rect)
 			SDL_Rect r = rect;
 			surface s = get_surface_portion(surf, r);
 			s = blur_surface(s, blur_depth_, false);
-			sdl_blit(s, NULL, surf, &rect);
+			sdl_blit(s, nullptr, surf, &rect);
 		}
 	}
 
-	sdl_blit(canvas_, NULL, surf, &rect);
+	sdl_blit(canvas_, nullptr, surf, &rect);
 }
 
 void tcanvas::parse_cfg(const config& cfg)
@@ -1524,7 +1523,7 @@ void tcanvas::parse_cfg(const config& cfg)
 	log_scope2(log_gui_parse, "Canvas: parsing config.");
 	shapes_.clear();
 
-	FOREACH(const AUTO & shape, cfg.all_children_range())
+	for(const auto & shape : cfg.all_children_range())
 	{
 		const std::string& type = shape.key;
 		const config& data = shape.cfg;
@@ -1544,7 +1543,7 @@ void tcanvas::parse_cfg(const config& cfg)
 		} else if(type == "pre_commit") {
 
 			/* note this should get split if more preprocessing is used. */
-			FOREACH(const AUTO & function, data.all_children_range())
+			for(const auto & function : data.all_children_range())
 			{
 
 				if(function.key == "blur") {

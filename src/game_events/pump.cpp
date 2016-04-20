@@ -39,7 +39,6 @@
 #include "variable.hpp"
 #include "resources.hpp"
 
-#include <boost/foreach.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -192,21 +191,21 @@ namespace { // Support functions
 		unit_map::const_iterator unit2 = units->find(ev.loc2);
 		vconfig filters(handler.get_config());
 
-		BOOST_FOREACH(const vconfig &condition, filters.get_children("filter_condition"))
+		for (const vconfig &condition : filters.get_children("filter_condition"))
 		{
 			if (!conditional_passed(condition)) {
 				return false;
 			}
 		}
 
-		BOOST_FOREACH(const vconfig &f, filters.get_children("filter_side"))
+		for (const vconfig &f : filters.get_children("filter_side"))
 		{
 			side_filter ssf(f, &resources::controller->gamestate());
 			if ( !ssf.match(resources::controller->current_side()) )
 				return false;
 		}
 
-		BOOST_FOREACH(const vconfig &f, filters.get_children("filter"))
+		for (const vconfig &f : filters.get_children("filter"))
 		{
 			if ( !ev.loc1.matches_unit_filter(unit1, f) ) {
 				return false;
@@ -219,7 +218,7 @@ namespace { // Support functions
 		{
 			const bool matches_unit = ev.loc1.matches_unit(unit1);
 			const config & attack = ev.data.child("first");
-			BOOST_FOREACH(const vconfig &f, special_filters)
+			for (const vconfig &f : special_filters)
 			{
 				if ( f.empty() )
 					special_matches = true;
@@ -234,7 +233,7 @@ namespace { // Support functions
 			return false;
 		}
 
-		BOOST_FOREACH(const vconfig &f, filters.get_children("filter_second"))
+		for (const vconfig &f : filters.get_children("filter_second"))
 		{
 			if ( !ev.loc2.matches_unit_filter(unit2, f) ) {
 				return false;
@@ -247,7 +246,7 @@ namespace { // Support functions
 		{
 			const bool matches_unit = ev.loc2.matches_unit(unit2);
 			const config & attack = ev.data.child("second");
-			BOOST_FOREACH(const vconfig &f, special_filters)
+			for (const vconfig &f : special_filters)
 			{
 				if ( f.empty() )
 					special_matches = true;
@@ -296,14 +295,14 @@ namespace { // Support functions
 		// The event hasn't been filtered out, so execute the handler.
 		++impl_->internal_wml_tracking;
 		context::scoped evc(impl_->contexts_);
-		assert(resources::lua_kernel != NULL);
+		assert(resources::lua_kernel != nullptr);
 		handler_p->handle_event(ev, handler_p, *resources::lua_kernel);
 		// NOTE: handler_p may be null at this point!
 
 		if(ev.name == "select") {
 			resources::gamedata->last_selected = ev.loc1;
 		}
-		if(resources::screen != NULL) {
+		if(resources::screen != nullptr) {
 			resources::screen->maybe_rebuild();
 		}
 		return context_mutated();
@@ -363,7 +362,7 @@ namespace { // Support functions
 				msg << " (" << itor->second << ")";
 			}
 
-			resources::screen->get_chat_manager().add_chat_message(time(NULL), caption, 0, msg.str(),
+			resources::screen->get_chat_manager().add_chat_message(time(nullptr), caption, 0, msg.str(),
 					events::chat_handler::MESSAGE_PUBLIC, false);
 			if ( to_cerr )
 				std::cerr << caption << ": " << msg.str() << '\n';
@@ -483,7 +482,7 @@ void t_pump::raise(const std::string& event,
            const entity_location& loc2,
            const config& data)
 {
-	if(resources::screen == NULL)
+	if(resources::screen == nullptr)
 		return;
 
 	DBG_EH << "raising event: " << event << "\n";
@@ -494,9 +493,9 @@ void t_pump::raise(const std::string& event,
 bool t_pump::operator()()
 {
 	// Quick aborts:
-	if(resources::screen == NULL)
+	if(resources::screen == nullptr)
 		return false;
-	assert(resources::lua_kernel != NULL);
+	assert(resources::lua_kernel != nullptr);
 	if ( impl_->events_queue.empty() ) {
 		DBG_EH << "Processing queued events, but none found.\n";
 		return false;
@@ -508,7 +507,7 @@ bool t_pump::operator()()
 	}
 	if(!lg::debug().dont_log("event_handler")) {
 		std::stringstream ss;
-		BOOST_FOREACH(const queued_event& ev, impl_->events_queue) {
+		for(const queued_event& ev : impl_->events_queue) {
 			ss << "name=" << ev.name << "; ";
 		}
 		DBG_EH << "processing queued events: " << ss.str() << "\n";

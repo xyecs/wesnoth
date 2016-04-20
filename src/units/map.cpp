@@ -22,8 +22,6 @@
 #include <functional>
 #include "units/map.hpp"
 
-#include <boost/foreach.hpp>
-
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 #define WRN_NG LOG_STREAM(warn, log_engine)
@@ -122,7 +120,7 @@ otherwise all operations are reverted.
 3. Try insertion in the lmap and remove the umap entry on failure
 
 The one oddity is that to facilitate non-invalidating iterators the list
-sometimes has NULL pointers which should be used when they correspond
+sometimes has nullptr pointers which should be used when they correspond
 to uids previously used.
  */
 std::pair<unit_map::unit_iterator, bool> unit_map::insert(unit_ptr p) {
@@ -354,7 +352,7 @@ bool unit_map::self_check() const {
 		}
 		if(!uit->second.unit && uit->second.ref_count == 0 ){
 			good=false;
-			ERR_NG << "unit_map umap unit==NULL when refcount == 0" << std::endl;
+			ERR_NG << "unit_map umap unit==nullptr when refcount == 0" << std::endl;
 		}
 		if(uit->second.unit && uit->second.unit->underlying_id() != uit->first){
 			good=false;
@@ -382,7 +380,7 @@ bool unit_map::has_unit(const unit * const u) const
 {
 	assert(u);
 
-	BOOST_FOREACH(const t_umap::value_type& item, umap_) {
+	for(const t_umap::value_type& item : umap_) {
 		if(item.second.unit.get() == u) {
 			return true;
 		}

@@ -13,8 +13,10 @@
 */
 
 #include "formula/callable_objects.hpp"
+#include "formula/function.hpp"
 #include "units/unit.hpp"
 #include "units/formula_manager.hpp"
+#include "config.hpp"
 
 template <typename T, typename K>
 variant convert_map( const std::map<T, K>& input_map ) {
@@ -62,7 +64,7 @@ void location_callable::get_inputs(std::vector<game_logic::formula_input>* input
 int location_callable::do_compare(const game_logic::formula_callable* callable) const
 {
 	const location_callable* loc_callable = dynamic_cast<const location_callable*>(callable);
-	if(loc_callable == NULL) {
+	if(loc_callable == nullptr) {
 		return formula_callable::do_compare(callable);
 	}
 
@@ -80,22 +82,38 @@ void location_callable::serialize_to_string(std::string& str) const
 
 variant attack_type_callable::get_value(const std::string& key) const
 {
-	if(key == "id") {
+	if(key == "id" || key == "name") {
 		return variant(att_.id());
+	} else if(key == "description") {
+		return variant(att_.name());
 	} else if(key == "type") {
 		return variant(att_.type());
+	} else if(key == "icon") {
+		return variant(att_.icon());
 	} else if(key == "range") {
 		return variant(att_.range());
 	} else if(key == "damage") {
 		return variant(att_.damage());
-	} else if(key == "number_of_attacks") {
+	} else if(key == "number_of_attacks" || key == "number" || key == "num_attacks" || key == "attacks") {
 		return variant(att_.num_attacks());
-	} else if(key == "special") {
-		std::vector<std::pair<t_string, t_string> > specials = att_.special_tooltips();
+	} else if(key == "attack_weight") {
+		return variant(att_.attack_weight(), variant::DECIMAL_VARIANT);
+	} else if(key == "defense_weight") {
+		return variant(att_.defense_weight(), variant::DECIMAL_VARIANT);
+	} else if(key == "accuracy") {
+		return variant(att_.accuracy());
+	} else if(key == "parry") {
+		return variant(att_.parry());
+	} else if(key == "movement_used") {
+		return variant(att_.movement_used());
+	} else if(key == "specials" || key == "special") {
+		const config specials = att_.specials();
 		std::vector<variant> res;
 
-		for( size_t i = 0; i != specials.size(); ++i ) {
-			res.push_back( variant(specials[i].first.base_str()) );
+		for(const auto& special : specials.all_children_range()) {
+			if(!special.cfg["id"].empty()) {
+				res.push_back(variant(special.cfg["id"].str()));
+			}
 		}
 		return variant(&res);
 	}
@@ -106,18 +124,25 @@ variant attack_type_callable::get_value(const std::string& key) const
 void attack_type_callable::get_inputs(std::vector<game_logic::formula_input>* inputs) const
 {
 	using game_logic::FORMULA_READ_ONLY;
-	inputs->push_back(game_logic::formula_input("id", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("name", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("type", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("description", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("icon", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("range", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("damage", FORMULA_READ_ONLY));
-	inputs->push_back(game_logic::formula_input("number_of_attacks", FORMULA_READ_ONLY));
-	inputs->push_back(game_logic::formula_input("special", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("number", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("accuracy", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("parry", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("movement_used", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("attack_weight", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("defense_weight", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("specials", FORMULA_READ_ONLY));
 }
 
 int attack_type_callable::do_compare(const formula_callable* callable) const
 {
 	const attack_type_callable* att_callable = dynamic_cast<const attack_type_callable*>(callable);
-	if(att_callable == NULL) {
+	if(att_callable == nullptr) {
 		return formula_callable::do_compare(callable);
 	}
 
@@ -284,6 +309,8 @@ variant unit_callable::get_value(const std::string& key) const
 		} else {
 			return variant();
 		}
+	} else if(key == "wml_vars") {
+		return variant(new config_callable(u_.variables()));
 	} else if(key == "n" || key == "s" || key == "ne" || key == "se" || key == "nw" || key == "sw" || key == "lawful" || key == "neutral" || key == "chaotic" || key == "liminal" || key == "male" || key == "female") {
 		return variant(key);
 	} else {
@@ -332,12 +359,13 @@ void unit_callable::get_inputs(std::vector<game_logic::formula_input>* inputs) c
 	inputs->push_back(game_logic::formula_input("alignment", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("facing", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("vars", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("wml_vars", FORMULA_READ_ONLY));
 }
 
 int unit_callable::do_compare(const formula_callable* callable) const
 {
 	const unit_callable* u_callable = dynamic_cast<const unit_callable*>(callable);
-	if(u_callable == NULL) {
+	if(u_callable == nullptr) {
 		return formula_callable::do_compare(callable);
 	}
 
@@ -351,7 +379,9 @@ variant unit_type_callable::get_value(const std::string& key) const
 	} else if(key == "type") {
 		return variant(u_.type_name());
 	} else if(key == "alignment") {
-		return variant(lexical_cast<std::string>(u_.alignment()));
+		return variant(u_.alignment().to_string());
+	} else if(key == "race") {
+		return variant(u_.race_id());
 	} else if(key == "abilities") {
 		std::vector<std::string> abilities = u_.get_ability_list();
 		std::vector<variant> res;
@@ -364,6 +394,14 @@ variant unit_type_callable::get_value(const std::string& key) const
 			res.push_back( variant(*it) );
 		}
 		return variant( &res );
+	} else if(key == "traits") {
+		std::vector<variant> res;
+
+		for(const auto& config : u_.possible_traits())
+		{
+			res.push_back(variant(config["id"].str()));
+		}
+		return variant(&res);
 	} else if(key == "attacks") {
 		std::vector<attack_type> att = u_.attacks();
 		std::vector<variant> res;
@@ -371,13 +409,13 @@ variant unit_type_callable::get_value(const std::string& key) const
 		for( std::vector<attack_type>::iterator i = att.begin(); i != att.end(); ++i)
 			res.push_back(variant(new attack_type_callable(*i)));
 		return variant(&res);
-	} else if(key == "hitpoints") {
+	} else if(key == "hitpoints" || key == "max_hitpoints") {
 		return variant(u_.hitpoints());
-	} else if(key == "experience") {
+	} else if(key == "experience" || key == "max_experience") {
 		return variant(u_.experience_needed(true));
 	} else if(key == "level") {
 		return variant(u_.level());
-	} else if(key == "total_movement") {
+	} else if(key == "total_movement" || key == "max_moves" || key == "moves") {
 		return variant(u_.movement());
 	} else if(key == "unpoisonable") {
 		return variant(u_.musthave_status("unpoisonable"));
@@ -387,6 +425,8 @@ variant unit_type_callable::get_value(const std::string& key) const
 		return variant(u_.musthave_status("unplagueable"));
 	} else if(key == "cost") {
 		return variant(u_.cost());
+	} else if(key == "recall_cost") {
+		return variant(u_.recall_cost());
 	} else if(key == "usage") {
 		return variant(u_.usage());
 	} else {
@@ -399,8 +439,10 @@ void unit_type_callable::get_inputs(std::vector<game_logic::formula_input>* inpu
 	using game_logic::FORMULA_READ_ONLY;
 	inputs->push_back(game_logic::formula_input("id", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("type", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("race", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("alignment", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("abilities", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("traits", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("attacks", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("hitpoints", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("experience", FORMULA_READ_ONLY));
@@ -408,17 +450,92 @@ void unit_type_callable::get_inputs(std::vector<game_logic::formula_input>* inpu
 	inputs->push_back(game_logic::formula_input("total_movement", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("undead", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("cost", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("recall_cost", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("usage", FORMULA_READ_ONLY));
 }
 
 int unit_type_callable::do_compare(const formula_callable* callable) const
 {
 	const unit_type_callable* u_callable = dynamic_cast<const unit_type_callable*>(callable);
-	if(u_callable == NULL) {
+	if(u_callable == nullptr) {
 		return formula_callable::do_compare(callable);
 	}
 
 	return u_.id().compare(u_callable->u_.id());
+}
+
+class fai_variant_visitor : public boost::static_visitor<variant> {
+public:
+	variant operator()(bool b) const {return variant(b ? 1 : 0);}
+	variant operator()(int i) const {return variant(i);}
+	variant operator()(unsigned long long i) const {return variant(i);}
+	variant operator()(double i) const {return variant(i * 1000, variant::DECIMAL_VARIANT);}
+	variant operator()(const std::string& s) const {return variant(s);} // TODO: Should comma-separated lists of stuff be returned as a list? The challenge is to distinguish them from ordinary strings that happen to contain a comma (or should we assume that such strings will be translatable?)
+	variant operator()(const t_string& s) const {return variant(s.str());}
+	variant operator()(boost::blank) const {return variant();}
+};
+
+variant config_callable::get_value(const std::string& key) const
+{
+	if(cfg_.has_attribute(key)) {
+		return cfg_[key].apply_visitor(fai_variant_visitor());
+	} else if(cfg_.has_child(key)) {
+		std::vector<variant> result;
+		for(const auto& child : cfg_.child_range(key)) {
+			result.push_back(variant(new config_callable(child)));
+		}
+		return variant(&result);
+	} else if(key == "__all_children") {
+		std::vector<variant> result;
+		for(const auto& child : cfg_.all_children_range()) {
+			const variant cfg_child(new config_callable(child.cfg));
+			const variant kv(new game_logic::key_value_pair(variant(child.key), cfg_child));
+			result.push_back(kv);
+		}
+		return variant(&result);
+	} else if(key == "__children") {
+		std::map<std::string, std::vector<variant> > build;
+		for(const auto& child : cfg_.all_children_range()) {
+			const variant cfg_child(new config_callable(child.cfg));
+			build[child.key].push_back(cfg_child);
+		}
+		std::map<variant,variant> result;
+		for(auto& p : build) {
+			result[variant(p.first)] = variant(&p.second);
+		}
+		return variant(&result);
+	} else if(key == "__attributes") {
+		std::map<variant,variant> result;
+		for(const auto& val : cfg_.attribute_range()) {
+			result[variant(val.first)] = val.second.apply_visitor(fai_variant_visitor());
+		}
+		return variant(&result);
+	} else return variant();
+}
+
+void config_callable::get_inputs(std::vector<game_logic::formula_input>* inputs) const
+{
+	inputs->push_back(game_logic::formula_input("__all_children", game_logic::FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("__children", game_logic::FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("__attributes", game_logic::FORMULA_READ_ONLY));
+	for(const auto& val : cfg_.attribute_range()) {
+		if(val.first.find_first_not_of(game_logic::formula::id_chars) != std::string::npos) {
+			inputs->push_back(game_logic::formula_input(val.first, game_logic::FORMULA_READ_ONLY));
+		}
+	}
+}
+
+int config_callable::do_compare(const game_logic::formula_callable* callable) const
+{
+	const config_callable* cfg_callable = dynamic_cast<const config_callable*>(callable);
+	if(cfg_callable == nullptr) {
+		return formula_callable::do_compare(callable);
+	}
+	
+	if(cfg_ == cfg_callable->get_config()) {
+		return 0;
+	}
+	return cfg_.hash().compare(cfg_callable->get_config().hash());
 }
 
 variant terrain_callable::get_value(const std::string& key) const
@@ -431,6 +548,24 @@ variant terrain_callable::get_value(const std::string& key) const
 		return variant(new location_callable(loc_));
 	} else if(key == "id") {
 		return variant(std::string(t_.id()));
+	} else if(key == "name") {
+		return variant(t_.name());
+	} else if(key == "editor_name") {
+		return variant(t_.editor_name());
+	} else if(key == "description") {
+		return variant(t_.description());
+	} else if(key == "icon") {
+		return variant(t_.icon_image());
+	} else if(key == "light") {
+		return variant(t_.light_bonus(0));
+	} else if(key == "village") {
+		return variant(t_.is_village());
+	} else if(key == "castle") {
+		return variant(t_.is_castle());
+	} else if(key == "keep") {
+		return variant(t_.is_keep());
+	} else if(key == "healing") {
+		return variant(t_.gives_healing());
 	} else
 		return variant();
 }
@@ -442,12 +577,21 @@ void terrain_callable::get_inputs(std::vector<game_logic::formula_input>* inputs
 	inputs->push_back(game_logic::formula_input("y", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("loc", FORMULA_READ_ONLY));
 	inputs->push_back(game_logic::formula_input("id", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("name", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("editor_name", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("description", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("icon", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("light", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("village", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("castle", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("keep", FORMULA_READ_ONLY));
+	inputs->push_back(game_logic::formula_input("healing", FORMULA_READ_ONLY));
 }
 
 int terrain_callable::do_compare(const formula_callable* callable) const
 {
 	const terrain_callable* terr_callable = dynamic_cast<const terrain_callable*>(callable);
-	if(terr_callable == NULL) {
+	if(terr_callable == nullptr) {
 		return formula_callable::do_compare(callable);
 	}
 

@@ -43,7 +43,6 @@
 #include "chat_events.hpp"              // for chat_handler, etc
 #include "config.hpp"                   // for config, etc
 #include "display_chat_manager.hpp"	// for clear_chat_messages
-#include "utils/foreach.hpp"
 #include "formatter.hpp"
 #include "game_board.hpp"               // for game_board
 #include "game_classification.hpp"      // for game_classification, etc
@@ -72,10 +71,10 @@
 #include "recall_list_manager.hpp"      // for recall_list_manager
 #include "replay.hpp"                   // for get_user_choice, etc
 #include "reports.hpp"                  // for register_generator, etc
-#include "resources.hpp"
 #include "scripting/lua_api.hpp"        // for luaW_toboolean, etc
 #include "scripting/lua_common.hpp"
 #include "scripting/lua_cpp_function.hpp"
+#include "scripting/lua_formula_bridge.hpp"
 #include "scripting/lua_gui2.hpp"	// for show_gamestate_inspector
 #include "scripting/lua_pathfind_cost_calculator.hpp"
 #include "scripting/lua_race.hpp"
@@ -86,6 +85,7 @@
 #include "sdl/utils.hpp"                // for surface
 #include "side_filter.hpp"              // for side_filter
 #include "sound.hpp"                    // for commit_music_changes, etc
+#include "soundsource.hpp"
 #include "synced_context.hpp"           // for synced_context, etc
 #include "synced_user_choice.hpp"
 #include "team.hpp"                     // for team, village_owner
@@ -104,25 +104,27 @@
 #include "units/ptr.hpp"                 // for unit_const_ptr, unit_ptr
 #include "units/types.hpp"    // for unit_type_data, unit_types, etc
 #include "util.hpp"                     // for lexical_cast
+#include "utils/markov_generator.hpp"
+#include "utils/context_free_grammar_generator.hpp"
 #include "variable.hpp"                 // for vconfig, etc
 #include "variable_info.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>               // for bind_t, bind
-#include <boost/foreach.hpp>            // for auto_any_base, etc
+#include "utils/functional.hpp"               // for bind_t, bind
 #include <boost/intrusive_ptr.hpp>      // for intrusive_ptr
 #include <boost/optional.hpp>
 #include <boost/range/algorithm/copy.hpp>    // boost::copy
 #include <boost/range/adaptors.hpp>     // boost::adaptors::filtered
 #include <boost/tuple/tuple.hpp>        // for tuple
 #include <cassert>                      // for assert
-#include <cstring>                      // for strcmp, NULL
+#include <cstring>                      // for strcmp
 #include <iterator>                     // for distance, advance
 #include <map>                          // for map, map<>::value_type, etc
 #include <new>                          // for operator new
 #include <set>                          // for set
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <utility>                      // for pair
+#include <algorithm>
 #include <vector>                       // for vector, etc
 #include <SDL_timer.h>                  // for SDL_GetTicks
 #include <SDL_video.h>                  // for SDL_Color, SDL_Surface
@@ -167,7 +169,7 @@ struct map_locker
 void game_lua_kernel::extract_preload_scripts(config const &game_config)
 {
 	game_lua_kernel::preload_scripts.clear();
-	BOOST_FOREACH(config const &cfg, game_config.child_range("lua")) {
+	for (config const &cfg : game_config.child_range("lua")) {
 		game_lua_kernel::preload_scripts.push_back(cfg);
 	}
 	game_lua_kernel::preload_config = game_config.child("game_config");
@@ -182,7 +184,7 @@ void game_lua_kernel::log_error(char const * msg, char const * context)
 void game_lua_kernel::lua_chat(std::string const &caption, std::string const &msg)
 {
 	if (game_display_) {
-		game_display_->get_chat_manager().add_chat_message(time(NULL), caption, 0, msg,
+		game_display_->get_chat_manager().add_chat_message(time(nullptr), caption, 0, msg,
 			events::chat_handler::MESSAGE_PUBLIC, false);
 	}
 }
@@ -315,10 +317,10 @@ static int impl_unit_get(lua_State *L)
 
 	if (strcmp(m, "upkeep") == 0) {
 		unit::t_upkeep upkeep = u.upkeep_raw();
-		if(boost::get<unit::upkeep_full>(&upkeep) != NULL){
+		if(boost::get<unit::upkeep_full>(&upkeep) != nullptr){
 			lua_pushstring(L, "full");
 		}
-		if(boost::get<unit::upkeep_loyal>(&upkeep) != NULL){
+		if(boost::get<unit::upkeep_loyal>(&upkeep) != nullptr){
 			lua_pushstring(L, "loyal");
 		}
 		else {
@@ -430,7 +432,7 @@ static int impl_unit_set(lua_State *L)
 		u.set_advancements(lua_check<std::vector<config> >(L, 3));
 		return 0;
 	}
-	
+
 	if (strcmp(m, "upkeep") == 0) {
 		if(lua_isnumber(L, 3)) {
 			u.set_upkeep(luaL_checkint(L, 3));
@@ -441,10 +443,10 @@ static int impl_unit_set(lua_State *L)
 			u.set_upkeep(unit::upkeep_loyal());
 		}
 		else if(strcmp(m, "full") == 0) {
-			u.set_upkeep(unit::upkeep_full());		
+			u.set_upkeep(unit::upkeep_full());
 		}
 		else {
-		
+
 			std::string err_msg = "unknown upkeep value of unit: ";
 			err_msg += v;
 			return luaL_argerror(L, 2, err_msg.c_str());
@@ -518,8 +520,8 @@ static int impl_unit_variables_get(lua_State *L)
 	return luaW_pushvariable(L, v) ? 1 : 0;
 }
 /**
- * Gets the attacks of a unit (__index metamethod).
- * - Arg 1: table containing the userdata containing the unit id.
+ * Gets the attacks of a unit or unit type (__index metamethod).
+ * - Arg 1: table containing the userdata containing the unit or unit type.
  * - Arg 2: index (int) or id (string) identifying a particular attack.
  * - Ret 1: the unit's attacks.
  */
@@ -530,20 +532,21 @@ static int impl_unit_attacks_get(lua_State *L)
 	}
 	lua_rawgeti(L, 1, -1);
 	const unit* u = luaW_tounit(L, -1);
-	if (!u) {
+	const unit_type* ut = static_cast<const unit_type*>(luaL_testudata(L, -1, "unit type"));
+	if (!u && !ut) {
 		return luaL_argerror(L, 1, "unknown unit");
 	}
-	const attack_type* attack = NULL;
-	const std::vector<attack_type>& attacks = u->attacks();
+	const attack_type* attack = nullptr;
+	const std::vector<attack_type>& attacks = u ? u->attacks() : ut->attacks();
 	if(!lua_isnumber(L,2)) {
 		std::string attack_id = luaL_checkstring(L, 2);
-		BOOST_FOREACH(const attack_type& at, attacks) {
+		for (const attack_type& at : attacks) {
 			if(at.id() == attack_id) {
 				attack = &at;
 				break;
 			}
 		}
-		if (attack == NULL) {
+		if (attack == nullptr) {
 			//return nil on invalid index, just like lua tables do.
 			return 0;
 		}
@@ -614,7 +617,7 @@ static int impl_unit_attack_get(lua_State *L)
 	lua_rawgeti(L, 1, 2);
 	std::string attack_id = luaL_checkstring(L, -1);
 	char const *m = luaL_checkstring(L, 2);
-	BOOST_FOREACH(const attack_type& attack, u->attacks())
+	for (const attack_type& attack : u->attacks())
 	{
 		if(attack.id() == attack_id)
 		{
@@ -661,7 +664,7 @@ static int impl_unit_attack_set(lua_State *L)
 	lua_rawgeti(L, 1, 2);
 	std::string attack_id = luaL_checkstring(L, -1);
 	char const *m = luaL_checkstring(L, 2);
-	BOOST_FOREACH(attack_type& attack, u->attacks())
+	for (attack_type& attack : u->attacks())
 	{
 		if(attack.id() == attack_id)
 		{
@@ -765,7 +768,7 @@ int game_lua_kernel::intf_get_unit(lua_State *L)
 	map_location loc;
 	if(lua_isstring(L, 1) && !lua_isnumber(L, 1)) {
 		std::string id = luaL_checkstring(L, 1);
-		BOOST_FOREACH(const unit& u, units()) {
+		for(const unit& u : units()) {
 			if(u.id() == id) {
 				new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(u.underlying_id());
 				lua_pushlightuserdata(L, getunitKey);
@@ -837,7 +840,7 @@ int game_lua_kernel::intf_get_units(lua_State *L)
 
 	// note that if filter is null, this yields a null filter matching everything (and doing no work)
 	filter_context & fc = game_state_;
-	BOOST_FOREACH ( const unit * ui, unit_filter(filter, &fc).all_matches_on_map()) {
+	for (const unit * ui : unit_filter(filter, &fc).all_matches_on_map()) {
 		new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(ui->underlying_id());
 		lua_pushvalue(L, 1);
 		lua_setmetatable(L, 3);
@@ -923,9 +926,9 @@ int game_lua_kernel::intf_get_recall_units(lua_State *L)
 	int i = 1, s = 1;
 	filter_context & fc = game_state_;
 	const unit_filter ufilt(filter, &fc);
-	BOOST_FOREACH(team &t, teams())
+	for (team &t : teams())
 	{
-		BOOST_FOREACH(unit_ptr & u, t.recall_list())
+		for (unit_ptr & u : t.recall_list())
 		{
 			if (!filter.null()) {
 				scoped_recall_unit auto_store("this_unit",
@@ -1111,7 +1114,7 @@ int game_lua_kernel::intf_set_menu_item(lua_State *L)
 int game_lua_kernel::intf_clear_menu_item(lua_State *L)
 {
 	std::string ids(luaL_checkstring(L, 1));
-	BOOST_FOREACH(const std::string& id, utils::split(ids, ',', utils::STRIP_SPACES)) {
+	for(const std::string& id : utils::split(ids, ',', utils::STRIP_SPACES)) {
 		if(id.empty()) {
 			WRN_LUA << "[clear_menu_item] has been given an empty id=, ignoring" << std::endl;
 			continue;
@@ -1158,12 +1161,12 @@ int game_lua_kernel::intf_shroud_op(lua_State *L, bool place_shroud)
 	const terrain_filter filter(cfg, &game_state_);
 	filter.get_locations(locs, true);
 
-	BOOST_FOREACH(const int &side_num, sides)
+	for (const int &side_num : sides)
 	{
 		index = side_num - 1;
 		team &t = teams()[index];
 
-		BOOST_FOREACH(map_location const &loc, locs)
+		for (map_location const &loc : locs)
 		{
 			if (place_shroud) {
 				t.place_shroud(loc);
@@ -1430,7 +1433,7 @@ int game_lua_kernel::intf_set_village_owner(lua_State *L)
 		teams()[old_side - 1].lose_village(loc);
 	}
 	if (new_side) {
-		teams()[new_side - 1].get_village(loc, old_side, (luaW_toboolean(L, 4) ? &gamedata() : NULL) );
+		teams()[new_side - 1].get_village(loc, old_side, (luaW_toboolean(L, 4) ? &gamedata() : nullptr) );
 	}
 	return 0;
 }
@@ -1550,7 +1553,7 @@ int game_lua_kernel::impl_game_config_get(lua_State *L)
 	const mp_game_settings& mp_settings = play_controller_.get_mp_settings();
 	const game_classification & classification = play_controller_.get_classification();
 
-	return_string_attrib("campaign_type", lexical_cast<std::string>(classification.campaign_type));
+	return_string_attrib("campaign_type", classification.campaign_type.to_string());
 	if(classification.campaign_type==game_classification::CAMPAIGN_TYPE::MULTIPLAYER) {
 		return_cfgref_attrib("mp_settings", mp_settings.to_config());
 		return_cfgref_attrib("era", game_config_manager::get()->game_config().find_child("era","id",mp_settings.mp_era));
@@ -1774,7 +1777,7 @@ int game_lua_kernel::intf_find_path(lua_State *L)
 {
 	int arg = 1;
 	map_location src, dst;
-	const unit* u = NULL;
+	const unit* u = nullptr;
 
 	if (lua_isuserdata(L, arg))
 	{
@@ -1804,7 +1807,7 @@ int game_lua_kernel::intf_find_path(lua_State *L)
 	int viewing_side = 0;
 	bool ignore_units = false, see_all = false, ignore_teleport = false;
 	double stop_at = 10000;
-	pathfind::cost_calculator *calc = NULL;
+	pathfind::cost_calculator *calc = nullptr;
 
 	if (lua_istable(L, arg))
 	{
@@ -1881,7 +1884,7 @@ int game_lua_kernel::intf_find_path(lua_State *L)
 int game_lua_kernel::intf_find_reach(lua_State *L)
 {
 	int arg = 1;
-	const unit* u = NULL;
+	const unit* u = nullptr;
 
 	if (lua_isuserdata(L, arg))
 	{
@@ -1966,11 +1969,11 @@ static int load_fake_units(lua_State* L, int arg, T& fake_units)
 		if (!lua_istable(L, entry)) {
 			goto error;
 		}
-		
+
 		if (!luaW_tolocation(L, entry, src)) {
 			goto error;
 		}
-		
+
 		lua_rawgeti(L, entry, 3);
 		if (!lua_isnumber(L, -1)) {
 			lua_getfield(L, entry, "side");
@@ -1979,7 +1982,7 @@ static int load_fake_units(lua_State* L, int arg, T& fake_units)
 			}
 		}
 		int side = lua_tointeger(L, -1);
-		
+
 		lua_rawgeti(L, entry, 4);
 		if (!lua_isstring(L, -1)) {
 			lua_getfield(L, entry, "type");
@@ -1988,10 +1991,10 @@ static int load_fake_units(lua_State* L, int arg, T& fake_units)
 			}
 		}
 		std::string unit_type = lua_tostring(L, -1);
-		
+
 		boost::tuple<map_location, int, std::string> tuple(src, side, unit_type);
 		fake_units.push_back(tuple);
-		
+
 		lua_settop(L, entry - 1);
 	}
 	return 0;
@@ -2119,11 +2122,11 @@ int game_lua_kernel::intf_find_cost_map(lua_State *L)
 	pathfind::full_cost_map cost_map(
 			ignore_units, !ignore_teleport, viewing_team, see_all, ignore_units);
 
-	BOOST_FOREACH(const unit* const u, real_units)
+	for (const unit* const u : real_units)
 	{
 		cost_map.add_unit(*u, use_max_moves);
 	}
-	BOOST_FOREACH(const unit_type_vector::value_type& fu, fake_units)
+	for (const unit_type_vector::value_type& fu : fake_units)
 	{
 		const unit_type* ut = unit_types.find(fu.get<2>());
 		cost_map.add_unit(fu.get<0>(), ut, fu.get<1>());
@@ -2133,7 +2136,7 @@ int game_lua_kernel::intf_find_cost_map(lua_State *L)
 	{
 		if (game_display_) {
 			game_display_->labels().clear_all();
-			BOOST_FOREACH(const map_location& loc, location_set)
+			for (const map_location& loc : location_set)
 			{
 				std::stringstream s;
 				s << cost_map.get_pair_at(loc.x, loc.y).first;
@@ -2147,7 +2150,7 @@ int game_lua_kernel::intf_find_cost_map(lua_State *L)
 	// create return value
 	lua_createtable(L, location_set.size(), 0);
 	int counter = 1;
-	BOOST_FOREACH(const map_location& loc, location_set)
+	for (const map_location& loc : location_set)
 	{
 		lua_createtable(L, 4, 0);
 
@@ -2182,7 +2185,7 @@ int game_lua_kernel::intf_heal_unit(lua_State *L)
 	std::vector<unit*> healers;
 	if (!healers_filter.null()) {
 		const unit_filter ufilt(healers_filter, &game_state_);
-		BOOST_FOREACH(unit& u, *units) {
+		for (unit& u : *units) {
 			if ( ufilt(u) && u.has_ability_type("heals") ) {
 				healers.push_back(&u);
 			}
@@ -2305,7 +2308,7 @@ int game_lua_kernel::intf_put_unit(lua_State *L)
 	}
 	int unit_arg = 1;
 
-	lua_unit *lu = NULL;
+	lua_unit *lu = nullptr;
 	unit_ptr u = unit_ptr();
 	map_location loc;
 	if (lua_isnumber(L, 1)) {
@@ -2436,7 +2439,7 @@ int game_lua_kernel::intf_put_recall_unit(lua_State *L)
 	if(map_locked_) {
 		return luaL_error(L, "Attempted to move a unit while the map is locked");
 	}
-	lua_unit *lu = NULL;
+	lua_unit *lu = nullptr;
 	unit_ptr u = unit_ptr();
 	int side = lua_tointeger(L, 2);
 	if (unsigned(side) > teams().size()) side = 0;
@@ -2546,7 +2549,7 @@ int game_lua_kernel::intf_float_label(lua_State *L)
 	if (!lua_isnoneornil(L, 3)) {
 		color = string_to_color(luaL_checkstring(L, 3));
 	}
-	
+
 	if (game_display_) {
 		game_display_->float_label(loc, text, color);
 	}
@@ -2761,8 +2764,8 @@ static void luaW_pushsimweapon(lua_State *L, const battle_context_unit_stats &bc
 	//if we called simulate_combat without giving an explicit weapon this can be useful.
 	lua_pushnumber(L, bcustats.attack_num);
 	lua_setfield(L, -2, "attack_num");
-	//this is NULL when there is no counter weapon
-	if(bcustats.weapon != NULL)
+	//this is nullptr when there is no counter weapon
+	if(bcustats.weapon != nullptr)
 	{
 		lua_pushstring(L, bcustats.weapon->id().c_str());
 		lua_setfield(L, -2, "name");
@@ -2804,7 +2807,7 @@ int game_lua_kernel::intf_simulate_combat(lua_State *L)
 	}
 
 	battle_context context(units(), att.get_location(),
-		def.get_location(), att_w, def_w, 0.0, NULL, &att);
+		def.get_location(), att_w, def_w, 0.0, nullptr, &att);
 
 	luaW_pushsimdata(L, context.get_attacker_combatant());
 	luaW_pushsimdata(L, context.get_defender_combatant());
@@ -2864,14 +2867,14 @@ int game_lua_kernel::intf_scroll_to_tile(lua_State *L)
 int game_lua_kernel::intf_select_hex(lua_State *L)
 {
 	ERR_LUA << "wesnoth.select_hex is deprecated, use wesnoth.select_unit and/or wesnoth.highlight_hex" << std::endl;
-	
+
 	// Need this because check_location may change the stack
 	// By doing this now, we ensure that it won't do so when
 	// intf_select_unit and intf_highlight_hex call it.
 	const map_location loc = luaW_checklocation(L, 1);
 	luaW_pushlocation(L, loc);
 	lua_replace(L, 1);
-	
+
 	intf_select_unit(L);
 	if(!lua_isnoneornil(L, 2) && luaW_toboolean(L,2)) {
 		intf_highlight_hex(L);
@@ -2918,8 +2921,8 @@ int game_lua_kernel::intf_deselect_hex(lua_State*)
 int game_lua_kernel::intf_is_skipping_messages(lua_State *L)
 {
 	bool skipping = play_controller_.is_skipping_replay();
-	if (!skipping && resources::game_events) {
-		skipping = resources::game_events->pump().context_skip_messages();
+	if (!skipping) {
+		skipping = game_state_.events_manager_->pump().context_skip_messages();
 	}
 	lua_pushboolean(L, skipping);
 	return 1;
@@ -2935,7 +2938,7 @@ int game_lua_kernel::intf_skip_messages(lua_State *L)
 	if (!lua_isnone(L, 1)) {
 		skip = luaW_toboolean(L, 1);
 	}
-	resources::game_events->pump().context_skip_messages(skip);
+	game_state_.events_manager_->pump().context_skip_messages(skip);
 	return 0;
 }
 
@@ -2973,7 +2976,7 @@ namespace
 			return cfg;
 		}
 
-		virtual std::string description() const OVERRIDE
+		virtual std::string description() const override
 		{
 			return desc;
 		}
@@ -3096,7 +3099,7 @@ int game_lua_kernel::intf_get_locations(lua_State *L)
 
 	lua_createtable(L, res.size(), 0);
 	int i = 1;
-	BOOST_FOREACH(map_location const &loc, res)
+	for (map_location const &loc : res)
 	{
 		lua_createtable(L, 2, 0);
 		lua_pushinteger(L, loc.x + 1);
@@ -3191,7 +3194,7 @@ int game_lua_kernel::intf_modify_ai_wml(lua_State *L)
 
 	side_filter ssf(cfg, &game_state_);
 	std::vector<int> sides = ssf.get_teams();
-	BOOST_FOREACH(const int &side_num, sides)
+	for (const int &side_num : sides)
 	{
 		ai::manager::modify_active_ai_for_side(side_num,cfg.get_parsed_config());
 	}
@@ -3218,7 +3221,7 @@ int game_lua_kernel::intf_modify_side(lua_State *L)
 	std::vector<int> sides = get_sides_vector(cfg);
 	size_t team_index;
 
-	BOOST_FOREACH(const int &side_num, sides)
+	for(const int &side_num : sides)
 	{
 		team_index = side_num - 1;
 
@@ -3378,7 +3381,7 @@ int game_lua_kernel::intf_get_sides(lua_State* L)
 	lua_settop(L, 0);
 	lua_createtable(L, sides.size(), 0);
 	unsigned index = 1;
-	BOOST_FOREACH(int side, sides) {
+	for(int side : sides) {
 		luaW_pushteam(L, teams()[side - 1]);
 		lua_rawseti(L, -2, index);
 		++index;
@@ -3394,7 +3397,7 @@ int game_lua_kernel::intf_get_sides(lua_State* L)
 static int intf_get_traits(lua_State* L)
 {
 	lua_newtable(L);
-	BOOST_FOREACH(const config& trait, unit_types.traits()) {
+	for(const config& trait : unit_types.traits()) {
 		const std::string& id = trait["id"];
 		//It seems the engine does nowhere check the id field for emptyness or duplicates
 		//(also not later on).
@@ -3635,13 +3638,13 @@ int game_lua_kernel::intf_kill(lua_State *L)
 	//Find all the dead units first, because firing events ruins unit_map iteration
 	std::vector<unit *> dead_men_walking;
 	const unit_filter ufilt(cfg, &game_state_);
-	BOOST_FOREACH(unit & u, units()){
+	for (unit & u : units()){
 		if ( ufilt(u) ) {
 			dead_men_walking.push_back(&u);
 		}
 	}
 
-	BOOST_FOREACH(unit * un, dead_men_walking) {
+	for(unit * un : dead_men_walking) {
 		map_location loc(un->get_location());
 		bool fire_event = false;
 		game_events::entity_location death_loc(*un);
@@ -3761,7 +3764,7 @@ int game_lua_kernel::intf_redraw(lua_State *L)
 
 		if (clear_shroud) {
 			side_filter filter(cfg, &game_state_);
-			BOOST_FOREACH(const int side, filter.get_teams()){
+			for (const int side : filter.get_teams()){
 				actions::clear_shroud(side);
 			}
 			screen.recalculate_minimap();
@@ -3926,11 +3929,11 @@ static int intf_debug_ai(lua_State *L)
 	int side = lua_tointeger(L, 1);
 	lua_pop(L, 1);
 
-	ai::component* c = ai::manager::get_active_ai_holder_for_side_dbg(side).get_component(NULL, "");
+	ai::component* c = ai::manager::get_active_ai_holder_for_side_dbg(side).get_component(nullptr, "");
 
 	// Bad, but works
 	std::vector<ai::component*> engines = c->get_children("engine");
-	ai::engine_lua* lua_engine = NULL;
+	ai::engine_lua* lua_engine = nullptr;
 	for (std::vector<ai::component*>::const_iterator i = engines.begin(); i != engines.end(); ++i)
 	{
 		if ((*i)->get_name() == "lua")
@@ -3943,7 +3946,7 @@ static int intf_debug_ai(lua_State *L)
 	//ai::component* e = ai::manager::get_active_ai_holder_for_side_dbg(side).get_component(c, "engine[lua]");
 	//ai::engine_lua* lua_engine = dynamic_cast<ai::engine_lua *>(e);
 
-	if (lua_engine == NULL)
+	if (lua_engine == nullptr)
 	{
 		//no lua engine is defined for this side.
 		//so set up a dummy engine
@@ -4038,6 +4041,52 @@ int game_lua_kernel::intf_replace_schedule(lua_State * L)
 	return 0;
 }
 
+int game_lua_kernel::intf_set_time_of_day(lua_State * L)
+{
+	if(!game_display_) {
+		return 0;
+	}
+	std::string area_id;
+	size_t area_i;
+	if (lua_isstring(L, 2)) {
+		area_id = lua_tostring(L, 1);
+		std::vector<std::string> area_ids = tod_man().get_area_ids();
+		area_i = std::find(area_ids.begin(), area_ids.end(), area_id) - area_ids.begin();
+		if(area_i >= area_ids.size()) {
+			return luaL_argerror(L, 1, "invalid time area ID");
+		}
+	}
+	int is_num = false;
+	int new_time = lua_tonumberx(L, 1, &is_num) - 1;
+	const std::vector<time_of_day>& times = area_id.empty()
+		? tod_man().times()
+		: tod_man().times(area_i);
+	int num_times = times.size();
+	if(!is_num) {
+		std::string time_id = luaL_checkstring(L, 1);
+		new_time = 0;
+		for(const time_of_day& time : times) {
+			if(time_id == time.id) {
+				break;
+			}
+			new_time++;
+		}
+		if(new_time >= num_times) {
+			return luaL_argerror(L, 1, "invalid time of day ID");
+		}
+	}
+	if(new_time < 0 || new_time >= num_times) {
+		return luaL_argerror(L, 1, "invalid time of day index");
+	}
+	
+	if(area_id.empty()) {
+		tod_man().set_current_time(new_time);
+	} else {
+		tod_man().set_current_time(new_time, area_i);
+	}
+	return 0;
+}
+
 int game_lua_kernel::intf_scroll(lua_State * L)
 {
 	vconfig cfg = luaW_checkvconfig(L, 1);
@@ -4045,7 +4094,7 @@ int game_lua_kernel::intf_scroll(lua_State * L)
 	if (game_display_) {
 		const std::vector<int> side_list = get_sides_vector(cfg);
 		bool side_match = false;
-		BOOST_FOREACH(int side, side_list) {
+		for (int side : side_list) {
 			if(teams()[side-1].is_local_human()) {
 				side_match = true;
 				break;
@@ -4074,7 +4123,7 @@ namespace {
 	{
 		lua_State *L = mState;
 		config cfg;
-		if (!luaW_getglobal(L, "wesnoth", "theme_items", name.c_str(), NULL))
+		if (!luaW_getglobal(L, "wesnoth", "theme_items", name))
 			return cfg;
 		if (!luaW_pcall(L, 0, 1)) return cfg;
 		luaW_toconfig(L, -1, cfg);
@@ -4099,7 +4148,7 @@ int game_lua_kernel::impl_theme_item(lua_State *L, std::string m)
 int game_lua_kernel::impl_theme_items_get(lua_State *L)
 {
 	char const *m = luaL_checkstring(L, 2);
-	lua_cpp::push_closure(L, boost::bind(&game_lua_kernel::impl_theme_item, this, _1, std::string(m)), 0);
+	lua_cpp::push_closure(L, std::bind(&game_lua_kernel::impl_theme_item, this, _1, std::string(m)), 0);
 	lua_pushvalue(L, 2);
 	lua_pushvalue(L, -2);
 	lua_rawset(L, 1);
@@ -4145,11 +4194,11 @@ int game_lua_kernel::intf_teleport(lua_State *L)
 	bool clear_shroud = luaW_toboolean(L, 4);
 	bool animate = luaW_toboolean(L, 5);
 
-	if (dst == u->get_location() || !resources::gameboard->map().on_board(dst)) {
+	if (dst == u->get_location() || !map().on_board(dst)) {
 		return 0;
 	}
-	const map_location vacant_dst = find_vacant_tile(dst, pathfind::VACANT_ANY, check_passability ? u.get() : NULL);
-	if (!resources::gameboard->map().on_board(vacant_dst)) {
+	const map_location vacant_dst = find_vacant_tile(dst, pathfind::VACANT_ANY, check_passability ? u.get() : nullptr);
+	if (!map().on_board(vacant_dst)) {
 		return 0;
 	}
 	// Clear the destination hex before the move (so the animation can be seen).
@@ -4164,11 +4213,11 @@ int game_lua_kernel::intf_teleport(lua_State *L)
 	teleport_path.push_back(src_loc);
 	teleport_path.push_back(vacant_dst);
 	unit_display::move_unit(teleport_path, u, animate);
-	
-	resources::units->move(src_loc, vacant_dst);
+
+	units().move(src_loc, vacant_dst);
 	unit::clear_status_caches();
 
-	u = &*resources::units->find(vacant_dst);
+	u = &*units().find(vacant_dst);
 	u->anim_comp().set_standing();
 
 	if ( clear_shroud ) {
@@ -4176,16 +4225,212 @@ int game_lua_kernel::intf_teleport(lua_State *L)
 		clearer.clear_unit(vacant_dst, *u);
 	}
 
-	if (resources::gameboard->map().is_village(vacant_dst)) {
+	if (map().is_village(vacant_dst)) {
 		actions::get_village(vacant_dst, u->side());
 	}
 
-	resources::screen->invalidate_unit_after_move(src_loc, vacant_dst);
-	resources::screen->draw();
+	game_display_->invalidate_unit_after_move(src_loc, vacant_dst);
+	game_display_->draw();
 
 	// Sighted events.
 	clearer.fire_events();
 	return 0;
+}
+
+/**
+ * Removes a sound source by its ID
+ * Arg 1: sound source ID
+ */
+int game_lua_kernel::intf_remove_sound_source(lua_State *L)
+{
+	soundsource::manager* man = play_controller_.get_soundsource_man();
+	std::string id = luaL_checkstring(L, 1);
+	man->remove(id);
+	return 0;
+}
+
+/**
+ * Add a new sound source
+ * Arg 1: Table containing keyword arguments
+ */
+int game_lua_kernel::intf_add_sound_source(lua_State *L)
+{
+	soundsource::manager* man = play_controller_.get_soundsource_man();
+	config cfg = luaW_checkconfig(L, 1);
+	try {
+		soundsource::sourcespec spec(cfg);
+		man->add(spec);
+	} catch (bad_lexical_cast &) {
+		ERR_LUA << "Error when parsing sound_source config: invalid parameter." << std::endl;
+		ERR_LUA << "sound_source config was: " << cfg.debug() << std::endl;
+		ERR_LUA << "Skipping this sound source..." << std::endl;
+	}
+	return 0;
+}
+
+/**
+ * Get an existing sound source
+ * Arg 1: The sound source ID
+ * Return: Config of sound source info, or nil if it didn't exist
+ * This is a copy of the sound source info, so you need to call
+ * add_sound_source again after changing it.
+ */
+int game_lua_kernel::intf_get_sound_source(lua_State *L)
+{
+	soundsource::manager* man = play_controller_.get_soundsource_man();
+	std::string id = luaL_checkstring(L, 1);
+	config cfg = man->get(id);
+	if(cfg.empty()) {
+		return 0;
+	}
+	// Sound sources do not know their own string ID
+	// Thus, we need to add this manually
+	cfg["id"] = id;
+	luaW_pushconfig(L, cfg);
+	return 1;
+}
+
+/**
+ * Logs a message
+ * Arg 1: (optional) Logger; "wml" for WML errors or deprecations
+ * Arg 2: Message
+ * Arg 3: Whether to print to chat (always true if arg 1 is "wml")
+ */
+int game_lua_kernel::intf_log(lua_State *L)
+{
+	const std::string& logger = lua_isstring(L, 2) ? luaL_checkstring(L, 1) : "";
+	const std::string& msg = lua_isstring(L, 2) ? luaL_checkstring(L, 2) : luaL_checkstring(L, 1);
+	
+	if(logger == "wml" || logger == "WML") {
+		lg::wml_error() << msg << '\n';
+	} else {
+		bool in_chat = luaW_toboolean(L, -1);
+		game_state_.events_manager_->pump().put_wml_message(logger,msg,in_chat);
+	}
+	return 0;
+}
+
+/**
+ * Implements the lifting and resetting of fog via WML.
+ * Keeping affect_normal_fog as false causes only the fog override to be affected.
+ * Otherwise, fog lifting will be implemented similar to normal sight (cannot be
+ * individually reset and ends at the end of the turn), and fog resetting will, in
+ * addition to removing overrides, extend the specified teams' normal fog to all
+ * hexes.
+ *
+ * Arg 1: (optional) Side number, or list of side numbers
+ * Arg 2: List of locations; each is a two-element array or a table with x and y keys
+ * Arg 3: (optional) boolean
+ */
+int game_lua_kernel::intf_toggle_fog(lua_State *L, const bool clear)
+{
+	bool affect_normal_fog = false;
+	if(lua_isboolean(L, -1)) {
+		affect_normal_fog = luaW_toboolean(L, -1);
+	}
+	std::set<int> sides;
+	if(lua_isnumber(L, 1)) {
+		sides.insert(lua_tonumber(L, 1));
+	} else if(lua_istable(L, 2)) {
+		const auto& v = lua_check<std::vector<int>>(L, 1);
+		sides.insert(v.begin(), v.end());
+	} else {
+		for(const team& t : teams()) {
+			sides.insert(t.side()+1);
+		}
+	}
+	const auto& v_locs = lua_check<std::vector<map_location>>(L, lua_istable(L, 2) ? 2 : 1);
+	std::set<map_location> locs(v_locs.begin(), v_locs.end());
+
+	for(const int &side_num : sides) {
+		if(side_num < 1 || static_cast<size_t>(side_num) > teams().size()) {
+			continue;
+		}
+		team &t = teams()[side_num-1];
+		if(!clear) {
+			// Extend fog.
+			t.remove_fog_override(locs);
+			if(affect_normal_fog) {
+				t.refog();
+			}
+		} else if(!affect_normal_fog) {
+			// Force the locations clear of fog.
+			t.add_fog_override(locs);
+		} else {
+			// Simply clear fog from the locations.
+			for(const map_location &hex : locs) {
+				t.clear_fog(hex);
+			}
+		}
+	}
+	
+	// Flag a screen update.
+	game_display_->recalculate_minimap();
+	game_display_->invalidate_all();
+	return 0;
+}
+
+static int intf_name_generator(lua_State *L)
+{
+	std::string type = luaL_checkstring(L, 1);
+	name_generator* gen = nullptr;
+	if(type == "markov" || type == "markov_chain") {
+		std::vector<std::string> input;
+		if(lua_istable(L, 2)) {
+			input = lua_check<std::vector<std::string>>(L, 2);
+		} else {
+			input = utils::parenthetical_split(luaL_checkstring(L, 2));
+		}
+		int chain_sz = luaL_optinteger(L, 3, 2);
+		int max_len = luaL_optinteger(L, 4, 12);
+		gen = new(lua_newuserdata(L, sizeof(markov_generator)))
+			markov_generator(input, chain_sz, max_len);
+		// Ensure the pointer didn't change when cast
+		assert(static_cast<void*>(gen) == dynamic_cast<markov_generator*>(gen));
+	} else if(type == "context_free" || type == "cfg" || type == "CFG") {
+		void* buf = lua_newuserdata(L, sizeof(context_free_grammar_generator));
+		if(lua_istable(L, 2)) {
+			std::map<std::string, std::vector<std::string>> data;
+			for(lua_pushnil(L); lua_next(L, 2); lua_pop(L, 1)) {
+				if(!lua_isstring(L, -2)) {
+					lua_pushstring(L, "CFG generator: invalid nonterminal name (must be a string)");
+					return lua_error(L);
+				}
+				if(lua_isstring(L, -1)) {
+					data[lua_tostring(L,-2)] = utils::split(lua_tostring(L,-1),'|');
+				} else if(lua_istable(L, -1)) {
+					data[lua_tostring(L,-2)] = lua_check<std::vector<std::string>>(L, -1);
+				} else {
+					lua_pushstring(L, "CFG generator: invalid noterminal value (must be a string or list of strings)");
+					return lua_error(L);
+				}
+			}
+			if(!data.empty()) {
+				gen = new(buf) context_free_grammar_generator(data);
+			}
+		} else {
+			gen = new(buf) context_free_grammar_generator(luaL_checkstring(L, 2));
+		}
+		if(gen) {
+			assert(static_cast<void*>(gen) == dynamic_cast<context_free_grammar_generator*>(gen));
+		}
+	} else {
+		return luaL_argerror(L, 1, "should be either 'markov_chain' or 'context_free'");
+	}
+	static const char*const generic_err = "error initializing name generator";
+	if(!gen) {
+		lua_pushstring(L, generic_err);
+		return lua_error(L);
+	}
+	// We set the metatable now, even if the generator is invalid, so that it
+	// will be properly collected if it was invalid.
+	luaL_getmetatable(L, "name generator");
+	lua_setmetatable(L, -2);
+	if(!gen->is_valid()) {
+		lua_pushstring(L, generic_err);
+		return lua_error(L);
+	}
+	return 1;
 }
 
 // END CALLBACK IMPLEMENTATION
@@ -4237,7 +4482,7 @@ int dispatch2(lua_State *L) {
 
 game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controller & pc, reports & reports_object)
 	: lua_kernel_base(video)
-	, game_display_(NULL)
+	, game_display_(nullptr)
 	, game_state_(gs)
 	, play_controller_(pc)
 	, reports_(reports_object)
@@ -4257,17 +4502,20 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "add_known_unit",           &intf_add_known_unit           },
 		{ "add_modification",         &intf_add_modification         },
 		{ "advance_unit",             &intf_advance_unit             },
+		{ "compile_formula",          &lua_formula_bridge::intf_compile_formula},
 		{ "copy_unit",                &intf_copy_unit                },
 		{ "create_unit",              &intf_create_unit              },
 		{ "debug",                    &intf_debug                    },
 		{ "debug_ai",                 &intf_debug_ai                 },
 		{ "eval_conditional",         &intf_eval_conditional         },
+		{ "eval_formula",             &lua_formula_bridge::intf_eval_formula},
 		{ "get_era",                  &intf_get_era                  },
 		{ "get_image_size",           &intf_get_image_size           },
 		{ "get_time_stamp",           &intf_get_time_stamp           },
 		{ "get_traits",               &intf_get_traits               },
 		{ "get_viewing_side",         &intf_get_viewing_side         },
 		{ "modify_ai",                &intf_modify_ai                },
+		{ "name_generator",           &intf_name_generator           },
 		{ "set_music",                &intf_set_music                },
 		{ "transform_unit",           &intf_transform_unit           },
 		{ "unit_ability",             &intf_unit_ability             },
@@ -4278,8 +4526,10 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "unit_resistance",          &intf_unit_resistance          },
 		{ "unsynced",                 &intf_do_unsynced              },
 		{ "add_event_handler",         &dispatch<&game_lua_kernel::intf_add_event                  >        },
+		{ "add_fog",                   &dispatch2<&game_lua_kernel::intf_toggle_fog, true          >        },
 		{ "add_tile_overlay",          &dispatch<&game_lua_kernel::intf_add_tile_overlay           >        },
 		{ "add_time_area",             &dispatch<&game_lua_kernel::intf_add_time_area              >        },
+		{ "add_sound_source",          &dispatch<&game_lua_kernel::intf_add_sound_source           >        },
 		{ "allow_end_turn",            &dispatch<&game_lua_kernel::intf_allow_end_turn             >        },
 		{ "allow_undo",                &dispatch<&game_lua_kernel::intf_allow_undo                 >        },
 		{ "animate_unit",              &dispatch<&game_lua_kernel::intf_animate_unit               >        },
@@ -4307,6 +4557,7 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "get_recall_units",          &dispatch<&game_lua_kernel::intf_get_recall_units           >        },
 		{ "get_selected_tile",         &dispatch<&game_lua_kernel::intf_get_selected_tile          >        },
 		{ "get_sides",                 &dispatch<&game_lua_kernel::intf_get_sides                  >        },
+		{ "get_sound_source",          &dispatch<&game_lua_kernel::intf_get_sound_source           >        },
 		{ "get_starting_location",     &dispatch<&game_lua_kernel::intf_get_starting_location      >        },
 		{ "get_terrain",               &dispatch<&game_lua_kernel::intf_get_terrain                >        },
 		{ "get_terrain_info",          &dispatch<&game_lua_kernel::intf_get_terrain_info           >        },
@@ -4324,6 +4575,7 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "kill",                      &dispatch<&game_lua_kernel::intf_kill                       >        },
 		{ "label",                     &dispatch<&game_lua_kernel::intf_label                      >        },
 		{ "lock_view",                 &dispatch<&game_lua_kernel::intf_lock_view                  >        },
+		{ "log",                       &dispatch<&game_lua_kernel::intf_log                        >        },
 		{ "match_location",            &dispatch<&game_lua_kernel::intf_match_location             >        },
 		{ "match_side",                &dispatch<&game_lua_kernel::intf_match_side                 >        },
 		{ "match_unit",                &dispatch<&game_lua_kernel::intf_match_unit                 >        },
@@ -4338,12 +4590,15 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "random",                    &dispatch<&game_lua_kernel::intf_random                     >        },
 		{ "redraw",                    &dispatch<&game_lua_kernel::intf_redraw                     >        },
 		{ "remove_event_handler",      &dispatch<&game_lua_kernel::intf_remove_event               >        },
+		{ "remove_fog",                &dispatch2<&game_lua_kernel::intf_toggle_fog, false         >        },
 		{ "remove_tile_overlay",       &dispatch<&game_lua_kernel::intf_remove_tile_overlay        >        },
 		{ "remove_time_area",          &dispatch<&game_lua_kernel::intf_remove_time_area           >        },
+		{ "remove_sound_source",       &dispatch<&game_lua_kernel::intf_remove_sound_source        >        },
 		{ "replace_schedule",          &dispatch<&game_lua_kernel::intf_replace_schedule           >        },
 		{ "scroll",                    &dispatch<&game_lua_kernel::intf_scroll                     >        },
 		{ "scroll_to_tile",            &dispatch<&game_lua_kernel::intf_scroll_to_tile             >        },
 		{ "select_hex",                &dispatch<&game_lua_kernel::intf_select_hex                 >        },
+		{ "set_time_of_day",           &dispatch<&game_lua_kernel::intf_set_time_of_day            >        },
 		{ "deselect_hex",              &dispatch<&game_lua_kernel::intf_deselect_hex               >        },
 		{ "select_unit",               &dispatch<&game_lua_kernel::intf_select_unit                >        },
 		{ "skip_messages",             &dispatch<&game_lua_kernel::intf_skip_messages              >        },
@@ -4362,17 +4617,18 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 		{ "view_locked",               &dispatch<&game_lua_kernel::intf_view_locked                >        },
 		{ "place_shroud",              &dispatch2<&game_lua_kernel::intf_shroud_op, true  >                 },
 		{ "remove_shroud",             &dispatch2<&game_lua_kernel::intf_shroud_op, false >                 },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
+	/*
 	lua_cpp::Reg const cpp_callbacks[] = {
-		{ NULL, NULL }
 	};
+	*/
 	lua_getglobal(L, "wesnoth");
 	if (!lua_istable(L,-1)) {
 		lua_newtable(L);
 	}
 	luaL_setfuncs(L, callbacks, 0);
-	lua_cpp::set_functions(L, cpp_callbacks);
+	//lua_cpp::set_functions(L, cpp_callbacks);
 	lua_setglobal(L, "wesnoth");
 
 	// Create the getside metatable.
@@ -4453,6 +4709,9 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 	lua_pushstring(L, "unit variables");
 	lua_setfield(L, -2, "__metatable");
 	lua_rawset(L, LUA_REGISTRYINDEX);
+	
+	// Create formula bridge metatables
+	cmd_log_ << lua_formula_bridge::register_metatables(L);
 
 	// Create the vconfig metatable.
 	cmd_log_ << lua_common::register_vconfig_metatable(L);
@@ -4540,12 +4799,12 @@ game_lua_kernel::game_lua_kernel(CVideo * video, game_state & gs, play_controlle
 
 	lua_settop(L, 0);
 
-	FOREACH(const AUTO& handler, game_events::wml_action::registry())
+	for(const auto& handler : game_events::wml_action::registry())
 	{
 		set_wml_action(handler.first, handler.second);
 	}
-	luaW_getglobal(L, "wesnoth", "effects", NULL);
-	BOOST_FOREACH(const std::string& effect, unit::builtin_effects) {
+	luaW_getglobal(L, "wesnoth", "effects");
+	for(const std::string& effect : unit::builtin_effects) {
 		lua_pushstring(L, effect.c_str());
 		push_builtin_effect();
 		lua_rawset(L, -3);
@@ -4569,7 +4828,7 @@ void game_lua_kernel::initialize(const config& level)
 	lua_rawget(L, -2);
 	lua_createtable(L, 0, 0);
 
-	if (!protected_call(1, 1, boost::bind(&lua_kernel_base::log_error, this, _1, _2))) {
+	if (!protected_call(1, 1, std::bind(&lua_kernel_base::log_error, this, _1, _2))) {
 		cmd_log_ << "Failed to compute wesnoth.sides\n";
 	} else {
 		lua_setfield(L, -2, "sides");
@@ -4582,7 +4841,7 @@ void game_lua_kernel::initialize(const config& level)
 	lua_settop(L, 0);
 	lua_getglobal(L, "wesnoth");
 	lua_newtable(L);
-	BOOST_FOREACH(const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
+	for (const unit_type_data::unit_type_map::value_type &ut : unit_types.types())
 	{
 		luaW_pushunittype(L, ut.first);
 		lua_setfield(L, -2, ut.first.c_str());
@@ -4602,10 +4861,10 @@ void game_lua_kernel::initialize(const config& level)
 	cmd_log_ << "Running preload scripts...\n";
 
 	game_config::load_config(game_lua_kernel::preload_config);
-	BOOST_FOREACH(const config &cfg, game_lua_kernel::preload_scripts) {
+	for (const config &cfg : game_lua_kernel::preload_scripts) {
 		run(cfg["code"].str().c_str());
 	}
-	BOOST_FOREACH(const config &cfg, level_lua_.child_range("lua")) {
+	for (const config &cfg : level_lua_.child_range("lua")) {
 		run(cfg["code"].str().c_str());
 	}
 
@@ -4632,7 +4891,7 @@ int game_lua_kernel::return_unit_method(lua_State *L, char const *m) {
 		{"select",                &dispatch<&game_lua_kernel::intf_select_unit>},
 	};
 
-	BOOST_FOREACH(const luaL_Reg& r, methods) {
+	for (const luaL_Reg& r : methods) {
 		if (strcmp(m, r.name) == 0) {
 			lua_pushcfunction(L, r.func);
 			return 1;
@@ -4662,7 +4921,7 @@ static char const *handled_file_tags[] = {
 
 static bool is_handled_file_tag(const std::string &s)
 {
-	BOOST_FOREACH(char const *t, handled_file_tags) {
+	for (char const *t : handled_file_tags) {
 		if (s == t) return true;
 	}
 	return false;
@@ -4676,12 +4935,12 @@ void game_lua_kernel::load_game(const config& level)
 {
 	lua_State *L = mState;
 
-	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_load", NULL))
+	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_load"))
 		return;
 
 	lua_newtable(L);
 	int k = 1;
-	BOOST_FOREACH(const config::any_child &v, level.all_children_range())
+	for (const config::any_child &v : level.all_children_range())
 	{
 		if (is_handled_file_tag(v.key)) continue;
 		lua_createtable(L, 2, 0);
@@ -4703,7 +4962,7 @@ void game_lua_kernel::save_game(config &cfg)
 {
 	lua_State *L = mState;
 
-	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_save", NULL))
+	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_save"))
 		return;
 
 	if (!luaW_pcall(L, 0, 1, false))
@@ -4741,7 +5000,7 @@ bool game_lua_kernel::run_event(game_events::queued_event const &ev)
 {
 	lua_State *L = mState;
 
-	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_event", NULL))
+	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_event"))
 		return false;
 
 	queued_event_context dummy(&ev, queued_events_);
@@ -4768,7 +5027,7 @@ int game_lua_kernel::cfun_builtin_effect(lua_State *L)
 	// The times= key is supposed to be ignored by the effect function.
 	// However, just in case someone doesn't realize this, we will set it to 1 here.
 	cfg["times"] = 1;
-	
+
 	if(need_apply) {
 		u.get()->apply_builtin_effect(which_effect, cfg);
 		return 0;
@@ -4812,7 +5071,7 @@ int game_lua_kernel::cfun_wml_action(lua_State *L)
 		(lua_touserdata(L, lua_upvalueindex(1)));
 
 	vconfig vcfg = luaW_checkvconfig(L, 1);
-	h(vcfg);
+	h(get_event_info(), vcfg);
 	return 0;
 }
 
@@ -4845,7 +5104,7 @@ bool game_lua_kernel::run_wml_action(std::string const &cmd, vconfig const &cfg,
 	lua_State *L = mState;
 
 
-	if (!luaW_getglobal(L, "wesnoth", "wml_actions", cmd.c_str(), NULL))
+	if (!luaW_getglobal(L, "wesnoth", "wml_actions", cmd))
 		return false;
 
 	queued_event_context dummy(&ev, queued_events_);
@@ -4866,7 +5125,7 @@ bool game_lua_kernel::run_wml_conditional(std::string const &cmd, vconfig const 
 	lua_State *L = mState;
 
 
-	if (!luaW_getglobal(L, "wesnoth", "wml_conditionals", cmd.c_str(), NULL)) {
+	if (!luaW_getglobal(L, "wesnoth", "wml_conditionals", cmd)) {
 		std::string err_msg = "unknown conditional wml: [";
 		err_msg += cmd;
 		err_msg += "]";
@@ -4894,7 +5153,8 @@ bool game_lua_kernel::run_filter(char const *name, unit const &u)
 	if (!ui.valid()) return false;
 
 	// Get the user filter by name.
-	if(!luaW_getglobal(L, name, NULL))
+	const std::vector<std::string>& path = utils::split(name, '.', utils::STRIP_SPACES);
+	if(!luaW_getglobal(L, path))
 	{
 		std::string message = std::string() + "function " + name + " not found";
 		log_error(message.c_str(), "Lua SUF Error");
@@ -4926,7 +5186,7 @@ std::string game_lua_kernel::apply_effect(const std::string& name, unit& u, cons
 	// (Note: The unit needs to be on the stack twice to prevent untimely GC.)
 	luaW_pushconfig(L, cfg);
 	// Stack: unit, cfg
-	if(luaW_getglobal(L, "wesnoth", "effects", name.c_str(), NULL)) {
+	if(luaW_getglobal(L, "wesnoth", "effects", name)) {
 		map_locker(this);
 		// Stack: unit, cfg, effect
 		if(lua_istable(L, -1)) {
@@ -4995,7 +5255,7 @@ void game_lua_kernel::mouse_over_hex_callback(const map_location& loc)
 {
 	lua_State *L = mState;
 
-	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_mouse_move", NULL)) {
+	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_mouse_move")) {
 		return;
 	}
 	lua_push(L, loc.x + 1);
@@ -5008,7 +5268,7 @@ void game_lua_kernel::select_hex_callback(const map_location& loc)
 {
 	lua_State *L = mState;
 
-	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_mouse_action", NULL)) {
+	if (!luaW_getglobal(L, "wesnoth", "game_events", "on_mouse_action")) {
 		return;
 	}
 	lua_push(L, loc.x + 1);

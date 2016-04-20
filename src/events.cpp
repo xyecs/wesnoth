@@ -34,6 +34,7 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include <boost/thread.hpp>
 
 #define ERR_GEN LOG_STREAM(err, lg::general)
 
@@ -394,8 +395,15 @@ void finalize() {
 }
 
 
+// TODO: I'm uncertain if this is always safe to call at static init; maybe set in main() instead?
+static const boost::thread::id main_thread = boost::this_thread::get_id();
+
 void pump()
 {
+	if(boost::this_thread::get_id() != main_thread) {
+		// Can only call this on the main thread!
+		return;
+	}
 	SDL_PumpEvents();
 	peek_for_resize();
 	pump_info info;

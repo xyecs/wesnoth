@@ -64,6 +64,12 @@ public:
 	void play_slice(bool is_delay_enabled = true);
 
 	static const config &get_theme(const config& game_config, std::string theme_name);
+
+	void apply_keyboard_scroll(int x, int y);
+	void set_scroll_up(bool on);
+	void set_scroll_down(bool on);
+	void set_scroll_left(bool on);
+	void set_scroll_right(bool on);
 protected:
 	virtual bool is_browsing() const
 	{ return false; }
@@ -79,17 +85,17 @@ protected:
 	/**
 	 * Get (optionally) a soundsources manager a derived class uses
 	 */
-	virtual soundsource::manager * get_soundsource_man() { return NULL; }
+	virtual soundsource::manager * get_soundsource_man() { return nullptr; }
 
 	/**
 	 * Get (optionally) a plugins context a derived class uses
 	 */
-	virtual plugins_context * get_plugins_context() { return NULL; }
+	virtual plugins_context * get_plugins_context() { return nullptr; }
 
 	/**
 	 * Get (optionally) a command executor to handle context menu events
 	 */
-	virtual hotkey::command_executor * get_hotkey_command_executor() { return NULL; }
+	virtual hotkey::command_executor * get_hotkey_command_executor() { return nullptr; }
 
 	/**
 	 * Derived classes should override this to return false when arrow keys
@@ -102,10 +108,10 @@ protected:
 
 	/**
 	 * Handle scrolling by keyboard, joystick and moving mouse near map edges
-	 * @see is_keyboard_scroll_active
+	 * @see scrolling_, which is set if the display is being scrolled
 	 * @return true when there was any scrolling, false otherwise
 	 */
-	bool handle_scroll(CKey& key, int mousex, int mousey, int mouse_flags, double joystickx, double joysticky);
+	bool handle_scroll(int mousex, int mousey, int mouse_flags, double joystickx, double joysticky);
 
 	/**
 	 * Process mouse- and keypress-events from SDL.
@@ -141,6 +147,10 @@ protected:
 	const config& game_config_;
 	CKey key_;
 	bool scrolling_;
+	bool scroll_up_;
+	bool scroll_down_;
+	bool scroll_left_;
+	bool scroll_right_;
 	joystick_manager joystick_manager_;
 };
 

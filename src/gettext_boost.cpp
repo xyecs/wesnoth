@@ -19,7 +19,6 @@
 #include <iostream>
 #include <locale>
 #include <boost/locale.hpp>
-#include <boost/foreach.hpp>
 // including boost/thread fixes linking of boost locale for msvc on boost 1.60
 #include <boost/thread.hpp>
 #include <set>
@@ -78,7 +77,7 @@ namespace
 			, is_dirty_(true)
 		{
 			const bl::localization_backend_manager& g_mgr = bl::localization_backend_manager::global();
-			BOOST_FOREACH(const std::string& name, g_mgr.get_all_backends())
+			for(const std::string& name : g_mgr.get_all_backends())
 			{
 				LOG_G << "Found boost locale backend: '" << name << "'\n";
 			}
@@ -225,7 +224,7 @@ std::string dsgettext (const char * domainname, const char *msgid)
 	std::string msgval = dgettext (domainname, msgid);
 	if (msgval == msgid) {
 		const char* firsthat = std::strrchr (msgid, '^');
-		if (firsthat == NULL)
+		if (firsthat == nullptr)
 			msgval = msgid;
 		else
 			msgval = firsthat + 1;
@@ -238,7 +237,7 @@ std::string dsngettext (const char * domainname, const char *singular, const cha
 	std::string msgval = boost::locale::dngettext(domainname, singular, plural, n, get_manager().get_locale());
 	if (msgval == singular) {
 		const char* firsthat = std::strrchr (singular, '^');
-		if (firsthat == NULL)
+		if (firsthat == nullptr)
 			msgval = singular;
 		else
 			msgval = firsthat + 1;

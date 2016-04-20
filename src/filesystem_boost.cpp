@@ -25,7 +25,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/foreach.hpp>
 #include <boost/system/windows_error.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -199,7 +198,7 @@ namespace {
 namespace filesystem {
 
 static void push_if_exists(std::vector<std::string> *vec, const path &file, bool full) {
-	if (vec != NULL) {
+	if (vec != nullptr) {
 		if (full)
 			vec->push_back(file.generic_string());
 		else
@@ -353,7 +352,7 @@ void get_files_in_dir(const std::string &dir,
 			}
 			push_if_exists(files, di->path(), mode == ENTIRE_FILE_PATH);
 
-			if (checksum != NULL) {
+			if (checksum != nullptr) {
 				std::time_t mtime = bfs::last_write_time(di->path(), ec);
 				if (ec) {
 					LOG_FS << "Failed to read modification time of " << di->path().string() << ": " << ec.message() << '\n';
@@ -391,13 +390,13 @@ void get_files_in_dir(const std::string &dir,
 		}
 	}
 
-	if (files != NULL)
+	if (files != nullptr)
 		std::sort(files->begin(),files->end());
 
-	if (dirs != NULL)
+	if (dirs != nullptr)
 		std::sort(dirs->begin(),dirs->end());
 
-	if (files != NULL && reorder == DO_REORDER) {
+	if (files != nullptr && reorder == DO_REORDER) {
 		// move finalcfg_filename, if present, to the end of the vector
 		for (unsigned int i = 0; i < files->size(); i++) {
 			if (ends_with((*files)[i], "/" + finalcfg_filename)) {
@@ -523,8 +522,8 @@ void set_user_data_dir(std::string newprefdir)
 
 		wchar_t docs_path[MAX_PATH];
 
-		HRESULT res = SHGetFolderPathW(NULL,
-									   CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL,
+		HRESULT res = SHGetFolderPathW(nullptr,
+									   CSIDL_PERSONAL | CSIDL_FLAG_CREATE, nullptr,
 									   SHGFP_TYPE_CURRENT,
 									   docs_path);
 		if(res != S_OK) {
@@ -675,7 +674,7 @@ std::string get_exe_dir()
 #ifdef _WIN32
     wchar_t process_path[MAX_PATH];
     SetLastError(ERROR_SUCCESS);
-    GetModuleFileNameW(NULL, process_path, MAX_PATH);
+    GetModuleFileNameW(nullptr, process_path, MAX_PATH);
     if (GetLastError() != ERROR_SUCCESS) {
         return get_cwd();
     }
@@ -1002,7 +1001,7 @@ void binary_paths_manager::set_paths(const config& cfg)
 	cleanup();
 	init_binary_paths();
 
-	BOOST_FOREACH(const config &bp, cfg.child_range("binary_path"))
+	for (const config &bp : cfg.child_range("binary_path"))
 	{
 		std::string path = bp["path"].str();
 		if (path.find("..") != std::string::npos) {
@@ -1076,7 +1075,7 @@ const std::vector<std::string>& get_binary_paths(const std::string& type)
 
 	init_binary_paths();
 
-	BOOST_FOREACH(const std::string &path, binary_paths)
+	for(const std::string &path : binary_paths)
 	{
 		res.push_back(get_user_data_dir() + "/" + path + type + "/");
 
@@ -1109,7 +1108,7 @@ std::string get_binary_file_location(const std::string& type, const std::string&
 	if (!is_legal_file(filename))
 		return std::string();
 
-	BOOST_FOREACH(const std::string &bp, get_binary_paths(type))
+	for(const std::string &bp : get_binary_paths(type))
 	{
 		path bpath(bp);
 		bpath /= filename;
@@ -1129,7 +1128,7 @@ std::string get_binary_dir_location(const std::string &type, const std::string &
 	if (!is_legal_file(filename))
 		return std::string();
 
-	BOOST_FOREACH(const std::string &bp, get_binary_paths(type))
+	for (const std::string &bp : get_binary_paths(type))
 	{
 		path bpath(bp);
 		bpath /= filename;

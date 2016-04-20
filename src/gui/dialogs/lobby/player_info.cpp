@@ -23,7 +23,7 @@
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -35,12 +35,12 @@ tlobby_player_info::tlobby_player_info(events::chat_handler& chat,
 									   const lobby_info& li)
 	: chat_(chat)
 	, info_(info)
-	, reason_(NULL)
-	, time_(NULL)
-	, relation_(NULL)
-	, add_to_friends_(NULL)
-	, add_to_ignores_(NULL)
-	, remove_from_list_(NULL)
+	, reason_(nullptr)
+	, time_(nullptr)
+	, relation_(nullptr)
+	, add_to_friends_(nullptr)
+	, add_to_ignores_(nullptr)
+	, remove_from_list_(nullptr)
 	, result_open_whisper_(false)
 	, lobby_info_(li)
 {
@@ -55,55 +55,55 @@ void tlobby_player_info::pre_show(twindow& window)
 	relation_ = find_widget<tlabel>(&window, "relation_info", false, true);
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "start_whisper", false),
-			boost::bind(&tlobby_player_info::start_whisper_button_callback,
+			std::bind(&tlobby_player_info::start_whisper_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	add_to_friends_ = &find_widget<tbutton>(&window, "add_to_friends", false);
 	connect_signal_mouse_left_click(
 			*add_to_friends_,
-			boost::bind(&tlobby_player_info::add_to_friends_button_callback,
+			std::bind(&tlobby_player_info::add_to_friends_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	add_to_ignores_ = &find_widget<tbutton>(&window, "add_to_ignores", false);
 	connect_signal_mouse_left_click(
 			*add_to_ignores_,
-			boost::bind(&tlobby_player_info::add_to_ignores_button_callback,
+			std::bind(&tlobby_player_info::add_to_ignores_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	remove_from_list_
 			= &find_widget<tbutton>(&window, "remove_from_list", false);
 	connect_signal_mouse_left_click(
 			*remove_from_list_,
-			boost::bind(&tlobby_player_info::remove_from_list_button_callback,
+			std::bind(&tlobby_player_info::remove_from_list_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "check_status", false),
-			boost::bind(&tlobby_player_info::check_status_button_callback,
+			std::bind(&tlobby_player_info::check_status_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "kick", false),
-			boost::bind(&tlobby_player_info::kick_button_callback,
+			std::bind(&tlobby_player_info::kick_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "kick_ban", false),
-			boost::bind(&tlobby_player_info::kick_ban_button_callback,
+			std::bind(&tlobby_player_info::kick_ban_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	find_widget<tlabel>(&window, "player_name", false).set_label(info_.name);
 
 	std::stringstream loc;
 	const game_info* game = lobby_info_.get_game_by_id(info_.game_id);
-	if(game != NULL) {
+	if(game != nullptr) {
 		loc << _("In game:") << " " << game->name << " ";
 		if(info_.observing) {
 			loc << _("(observing)");

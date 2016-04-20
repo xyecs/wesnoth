@@ -30,6 +30,7 @@
 #include "generators/map_generator.hpp" // for mapgen_exception
 #include "gettext.hpp"                  // for _
 #include "gui/dialogs/language_selection.hpp"  // for tlanguage_selection
+#include "gui/dialogs/loadscreen.hpp"
 #include "gui/dialogs/message.hpp" //for show error message
 #include "gui/dialogs/multiplayer/mp_host_game_prompt.hpp" //for host game prompt
 #include "gui/dialogs/multiplayer/mp_method_selection.hpp"
@@ -39,7 +40,6 @@
 #include "gui/widgets/window.hpp"       // for twindow, etc
 #include "intro.hpp"
 #include "language.hpp"                 // for language_def, etc
-#include "loadscreen.hpp"               // for loadscreen, etc
 #include "log.hpp"                      // for LOG_STREAM, logger, general, etc
 #include "map/exception.hpp"
 #include "game_initialization/multiplayer.hpp"              // for start_client, etc
@@ -60,10 +60,9 @@
 #include "wml_exception.hpp"            // for twml_exception
 
 #include <algorithm>                    // for copy, max, min, stable_sort
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <boost/optional.hpp>           // for optional
 #include <boost/tuple/tuple.hpp>        // for tuple
-#include <cstdlib>                     // for NULL, system
+#include <cstdlib>                     // for system
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <utility>                      // for pair
 #include <SDL.h>                        // for SDL_INIT_JOYSTICK, etc
@@ -346,7 +345,7 @@ bool game_launcher::init_language()
 	language_def locale;
 	if(cmdline_opts_.language) {
 		std::vector<language_def> langs = get_languages();
-		BOOST_FOREACH(const language_def & def, langs) {
+		for(const language_def & def : langs) {
 			if(def.localename == *cmdline_opts_.language) {
 				locale = def;
 				break;
@@ -385,7 +384,7 @@ bool game_launcher::init_video()
 
 #if !(defined(__APPLE__))
 	surface icon(image::get_image("icons/icon-game.png", image::UNSCALED));
-	if(icon != NULL) {
+	if(icon != nullptr) {
 
 		video().set_window_icon(icon);
 	}
@@ -742,7 +741,7 @@ void game_launcher::set_tutorial()
 
 void game_launcher::mark_completed_campaigns(std::vector<config> &campaigns)
 {
-	BOOST_FOREACH(config &campaign, campaigns) {
+	for (config &campaign : campaigns) {
 		campaign["completed"] = preferences::is_campaign_completed(campaign["id"]);
 	}
 }
@@ -884,14 +883,11 @@ bool game_launcher::play_multiplayer()
 				start_wesnothd();
 			} catch(game::mp_server_error&)
 			{
-				std::string path = preferences::show_wesnothd_server_search(video());
-
-				if (!path.empty())
-				{
-					preferences::set_mp_server_program_name(path);
+				preferences::show_wesnothd_server_search(video());
+				
+				try {
 					start_wesnothd();
-				}
-				else
+				} catch(game::mp_server_error&)
 				{
 					return false;
 				}
@@ -1011,16 +1007,18 @@ void game_launcher::launch_game(RELOAD_GAME_DATA reload)
 		return;
 	}
 
-	loadscreen::global_loadscreen_manager loadscreen_manager(video());
-	loadscreen::start_stage("load data");
-	if(reload == RELOAD_DATA) {
-		try {
-			game_config_manager::get()->
-				load_game_config_for_game(state_.classification());
-		} catch(config::error&) {
-			return;
+	gui2::tloadscreen::display(video(), [this, reload]() {
+
+		gui2::tloadscreen::progress("load data");
+		if(reload == RELOAD_DATA) {
+			try {
+				game_config_manager::get()->
+					load_game_config_for_game(state_.classification());
+			} catch(config::error&) {
+				return;
+			}
 		}
-	}
+	});
 
 	try {
 		campaign_controller ccontroller(video(), state_, game_config_manager::get()->game_config(), game_config_manager::get()->terrain_types());

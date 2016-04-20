@@ -22,10 +22,9 @@
 #include "gui/widgets/clickable.hpp"
 #include "gui/widgets/spacer.hpp"
 #include "gui/widgets/window.hpp"
-#include "utils/foreach.hpp"
 #include "sdl/rect.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -71,16 +70,16 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count)
 	, state_(ENABLED)
 	, vertical_scrollbar_mode_(auto_visible_first_run)
 	, horizontal_scrollbar_mode_(auto_visible_first_run)
-	, vertical_scrollbar_grid_(NULL)
-	, horizontal_scrollbar_grid_(NULL)
-	, vertical_scrollbar_(NULL)
-	, horizontal_scrollbar_(NULL)
-	, content_grid_(NULL)
-	, content_(NULL)
+	, vertical_scrollbar_grid_(nullptr)
+	, horizontal_scrollbar_grid_(nullptr)
+	, vertical_scrollbar_(nullptr)
+	, horizontal_scrollbar_(nullptr)
+	, content_grid_(nullptr)
+	, content_(nullptr)
 	, content_visible_area_()
 {
 	connect_signal<event::SDL_KEY_DOWN>(
-			boost::bind(&tscrollbar_container::signal_handler_sdl_key_down,
+			std::bind(&tscrollbar_container::signal_handler_sdl_key_down,
 						this,
 						_2,
 						_3,
@@ -89,28 +88,28 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count)
 
 
 	connect_signal<event::SDL_WHEEL_UP>(
-			boost::bind(&tscrollbar_container::signal_handler_sdl_wheel_up,
+			std::bind(&tscrollbar_container::signal_handler_sdl_wheel_up,
 						this,
 						_2,
 						_3),
 			event::tdispatcher::back_post_child);
 
 	connect_signal<event::SDL_WHEEL_DOWN>(
-			boost::bind(&tscrollbar_container::signal_handler_sdl_wheel_down,
+			std::bind(&tscrollbar_container::signal_handler_sdl_wheel_down,
 						this,
 						_2,
 						_3),
 			event::tdispatcher::back_post_child);
 
 	connect_signal<event::SDL_WHEEL_LEFT>(
-			boost::bind(&tscrollbar_container::signal_handler_sdl_wheel_left,
+			std::bind(&tscrollbar_container::signal_handler_sdl_wheel_left,
 						this,
 						_2,
 						_3),
 			event::tdispatcher::back_post_child);
 
 	connect_signal<event::SDL_WHEEL_RIGHT>(
-			boost::bind(&tscrollbar_container::signal_handler_sdl_wheel_right,
+			std::bind(&tscrollbar_container::signal_handler_sdl_wheel_right,
 						this,
 						_2,
 						_3),
@@ -751,7 +750,7 @@ void tscrollbar_container::finalize_setup()
 
 	connect_signal_notify_modified(
 			*vertical_scrollbar_,
-			boost::bind(&tscrollbar_container::vertical_scrollbar_moved, this));
+			std::bind(&tscrollbar_container::vertical_scrollbar_moved, this));
 
 	/***** Setup horizontal scrollbar *****/
 	horizontal_scrollbar_grid_ = find_widget<tgrid>(
@@ -762,11 +761,11 @@ void tscrollbar_container::finalize_setup()
 
 	connect_signal_notify_modified(
 			*horizontal_scrollbar_,
-			boost::bind(&tscrollbar_container::horizontal_scrollbar_moved,
+			std::bind(&tscrollbar_container::horizontal_scrollbar_moved,
 						this));
 
 	/***** Setup the scrollbar buttons *****/
-	FOREACH(const AUTO & item, scroll_lookup())
+	for(const auto & item : scroll_lookup())
 	{
 
 		// Vertical.
@@ -774,7 +773,7 @@ void tscrollbar_container::finalize_setup()
 				vertical_scrollbar_grid_, item.first, false, false);
 
 		if(button) {
-			button->connect_click_handler(boost::bind(
+			button->connect_click_handler(std::bind(
 					&tscrollbar_container::scroll_vertical_scrollbar,
 					this,
 					item.second));
@@ -785,7 +784,7 @@ void tscrollbar_container::finalize_setup()
 				horizontal_scrollbar_grid_, item.first, false, false);
 
 		if(button) {
-			button->connect_click_handler(boost::bind(
+			button->connect_click_handler(std::bind(
 					&tscrollbar_container::scroll_horizontal_scrollbar,
 					this,
 					item.second));
@@ -915,7 +914,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 {
 	if(true) { /** @todo scrollbar visibility. */
 		/***** set scroll up button status *****/
-		FOREACH(const AUTO & name, button_up_names)
+		for(const auto & name : button_up_names)
 		{
 			tcontrol* button = find_widget<tcontrol>(
 					vertical_scrollbar_grid_, name, false, false);
@@ -926,7 +925,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 		}
 
 		/***** set scroll down status *****/
-		FOREACH(const AUTO & name, button_down_names)
+		for(const auto & name : button_down_names)
 		{
 			tcontrol* button = find_widget<tcontrol>(
 					vertical_scrollbar_grid_, name, false, false);
@@ -943,7 +942,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 
 	if(true) { /** @todo scrollbar visibility. */
 		/***** Set scroll left button status *****/
-		FOREACH(const AUTO & name, button_up_names)
+		for(const auto & name : button_up_names)
 		{
 			tcontrol* button = find_widget<tcontrol>(
 					horizontal_scrollbar_grid_, name, false, false);
@@ -954,7 +953,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 		}
 
 		/***** Set scroll right button status *****/
-		FOREACH(const AUTO & name, button_down_names)
+		for(const auto & name : button_down_names)
 		{
 			tcontrol* button = find_widget<tcontrol>(
 					horizontal_scrollbar_grid_, name, false, false);

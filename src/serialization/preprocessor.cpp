@@ -33,8 +33,6 @@
 #include "util.hpp"
 #include "version.hpp"
 
-#include <boost/foreach.hpp>
-
 #include <stdexcept>
 
 static lg::log_domain log_preprocessor("preprocessor");
@@ -66,7 +64,7 @@ static std::string get_filename(const std::string& file_code){
 	int n = 0;
 	s >> std::hex >> n;
 
-	BOOST_FOREACH(const t_file_number_map::value_type& p, file_number_map){
+	for(const t_file_number_map::value_type& p : file_number_map) {
 		if(p.second == n)
 			return p.first;
 	}
@@ -142,11 +140,12 @@ void preproc_define::write(config_writer& writer, const std::string& name) const
 	writer.write_key_val("name", name);
 	writer.write_key_val("value", value);
 	writer.write_key_val("textdomain", textdomain);
-	writer.write_key_val("linenum", lexical_cast<std::string>(linenum));
+	writer.write_key_val("linenum", std::to_string(linenum));
 	writer.write_key_val("location", get_location(location));
 
-	BOOST_FOREACH(const std::string &arg, arguments)
+	for(const std::string &arg : arguments) {
 		write_argument(writer, arg);
+	}
 
 	writer.close_child(key);
 }
@@ -163,8 +162,9 @@ void preproc_define::read(const config& cfg)
 	linenum = cfg["linenum"];
 	location = cfg["location"].str();
 
-	BOOST_FOREACH(const config &arg, cfg.child_range("argument"))
+	for(const config &arg : cfg.child_range("argument")) {
 		read_argument(arg);
+	}
 }
 
 preproc_map::value_type preproc_define::read_pair(const config &cfg)
@@ -272,7 +272,7 @@ preprocessor_streambuf::preprocessor_streambuf(preproc_map *def) :
 	streambuf(),
 	out_buffer_(""),
 	buffer_(),
-	current_(NULL),
+	current_(nullptr),
 	defines_(def),
 	default_defines_(),
 	textdomain_(PACKAGE),
@@ -287,7 +287,7 @@ preprocessor_streambuf::preprocessor_streambuf(preprocessor_streambuf const &t) 
 	streambuf(),
 	out_buffer_(""),
 	buffer_(),
-	current_(NULL),
+	current_(nullptr),
 	defines_(t.defines_),
 	default_defines_(),
 	textdomain_(PACKAGE),
@@ -556,9 +556,9 @@ preprocessor_file::preprocessor_file(preprocessor_streambuf &t, std::string cons
 {
 	if (filesystem::is_directory(name)) {
 
-		filesystem::get_files_in_dir(name, &files_, NULL, filesystem::ENTIRE_FILE_PATH, filesystem::SKIP_MEDIA_DIR, filesystem::DO_REORDER);
+		filesystem::get_files_in_dir(name, &files_, nullptr, filesystem::ENTIRE_FILE_PATH, filesystem::SKIP_MEDIA_DIR, filesystem::DO_REORDER);
 
-		BOOST_FOREACH(std::string fname, files_) {
+		for(std::string fname : files_) {
 			size_t cpos = fname.rfind(" ");
 			if (cpos != std::string::npos && cpos >= symbol_index) {
 				std::stringstream ss;
@@ -577,7 +577,7 @@ preprocessor_file::preprocessor_file(preprocessor_streambuf &t, std::string cons
 		}
 		else
 			new preprocessor_data(t, file_stream, "", filesystem::get_short_wml_path(name),
-				1, filesystem::directory_name(name), t.textdomain_, NULL);
+				1, filesystem::directory_name(name), t.textdomain_, nullptr);
 	}
 	pos_ = files_.begin();
 	end_ = files_.end();
@@ -1230,7 +1230,7 @@ preprocessor_deleter::~preprocessor_deleter()
 {
 	clear(std::ios_base::goodbit);
 	exceptions(std::ios_base::goodbit);
-	rdbuf(NULL);
+	rdbuf(nullptr);
 	delete buf_;
 	delete defines_;
 }
@@ -1238,7 +1238,7 @@ preprocessor_deleter::~preprocessor_deleter()
 std::istream *preprocess_file(std::string const &fname, preproc_map *defines)
 {
 	log_scope("preprocessing file " + fname + " ...");
-	preproc_map *owned_defines = NULL;
+	preproc_map *owned_defines = nullptr;
 	if (!defines) {
 		// If no preproc_map has been given, create a new one,
 		// and ensure it is destroyed when the stream is
@@ -1263,14 +1263,14 @@ void preprocess_resource(const std::string& res_name, preproc_map *defines_map,
 		filesystem::get_files_in_dir(res_name, &files, &dirs, filesystem::ENTIRE_FILE_PATH, filesystem::SKIP_MEDIA_DIR, filesystem::DO_REORDER);
 
 		// subdirectories
-		BOOST_FOREACH(const std::string& dir, dirs)
+		for(const std::string& dir : dirs)
 		{
 			LOG_PREPROC << "processing sub-dir: " << dir << '\n';
 			preprocess_resource(dir, defines_map, write_cfg, write_plain_cfg, target_directory);
 		}
 
 		// files in current directory
-		BOOST_FOREACH(const std::string& file, files)
+		for(const std::string& file : files)
 		{
 			preprocess_resource(file, defines_map, write_cfg, write_plain_cfg, target_directory);
 		}

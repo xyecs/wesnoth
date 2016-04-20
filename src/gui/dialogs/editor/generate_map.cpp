@@ -28,9 +28,8 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
 #include "generators/map_generator.hpp"
-#include "utils/foreach.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define ERR_ED LOG_STREAM_INDENT(err, editor)
 
@@ -64,7 +63,7 @@ REGISTER_DIALOG(editor_generate_map)
 
 teditor_generate_map::teditor_generate_map()
 	: map_generators_()
-	, last_map_generator_(NULL)
+	, last_map_generator_(nullptr)
 	, current_map_generator_(0)
 	, random_seed_()
 {
@@ -112,7 +111,7 @@ void teditor_generate_map::pre_show(twindow& window)
 	window.keyboard_capture(&list);
 
 	std::map<std::string, string_map> lrow;
-	FOREACH(const AUTO & gen, map_generators_)
+	for(const auto & gen : map_generators_)
 	{
 		assert(gen);
 		lrow["generator_name"]["label"] = gen->config_name();
@@ -125,7 +124,7 @@ void teditor_generate_map::pre_show(twindow& window)
 		}
 	}
 
-	if (last_map_generator_ != NULL) {
+	if (last_map_generator_ != nullptr) {
 		// We need to call this manually because it won't be called by
 		// list.select_row() even if we set the callback before
 		// calling it
@@ -133,14 +132,14 @@ void teditor_generate_map::pre_show(twindow& window)
 	}
 
 	list.set_callback_item_change(
-			boost::bind(&teditor_generate_map::do_generator_selected, this, boost::ref(window)));
+			std::bind(&teditor_generate_map::do_generator_selected, this, std::ref(window)));
 
 	tbutton& settings_button = find_widget<tbutton>(&window, "settings", false);
 	connect_signal_mouse_left_click(
 			settings_button,
-			boost::bind(&teditor_generate_map::do_settings,
+			std::bind(&teditor_generate_map::do_settings,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 }
 
 boost::optional<boost::uint32_t> teditor_generate_map::get_seed()

@@ -54,11 +54,9 @@
 #include "whiteboard/typedefs.hpp"      // for whiteboard_lock
 #include "wml_separators.hpp"           // for COLUMN_SEPARATOR, etc
 
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <boost/intrusive_ptr.hpp>      // for intrusive_ptr
 #include <boost/shared_ptr.hpp>         // for shared_ptr
 #include <cassert>                     // for assert
-#include <cstddef>                     // for NULL
 #include <new>                          // for bad_alloc
 #include <ostream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for string, operator<<, etc
@@ -96,7 +94,7 @@ mouse_handler::mouse_handler(game_display* gui, play_controller & pc) :
 
 mouse_handler::~mouse_handler()
 {
-	singleton_ = NULL;
+	singleton_ = nullptr;
 }
 
 void mouse_handler::set_side(int side_number)
@@ -168,7 +166,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update, m
 	// we do it before cursor selection, because it uses current_paths_
 	if( !pc_.get_map_const().on_board(new_hex) ) {
 		current_route_.steps.clear();
-		gui().set_route(NULL);
+		gui().set_route(nullptr);
 		pc_.get_whiteboard()->erase_temp_move();
 	}
 
@@ -179,7 +177,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update, m
 	} else if(over_route_) {
 		over_route_ = false;
 		current_route_.steps.clear();
-		gui().set_route(NULL);
+		gui().set_route(nullptr);
 		pc_.get_whiteboard()->erase_temp_move();
 	}
 
@@ -257,7 +255,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update, m
 
 		if(dest == selected_hex_ || dest_un) {
 			current_route_.steps.clear();
-			gui().set_route(NULL);
+			gui().set_route(nullptr);
 			pc_.get_whiteboard()->erase_temp_move();
 		}
 		else if (!current_paths_.destinations.empty() &&
@@ -289,7 +287,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update, m
 			}
 		} else if (!selected_unit) {
 			current_route_.steps.clear();
-			gui().set_route(NULL);
+			gui().set_route(nullptr);
 			pc_.get_whiteboard()->erase_temp_move();
 		}
 
@@ -695,7 +693,7 @@ void mouse_handler::move_action(bool browse)
 				selected_hex_ = map_location();
 				gui().select_hex(map_location());
 				gui().clear_attack_indicator();
-				gui().set_route(NULL);
+				gui().set_route(nullptr);
 				show_partial_move_ = false;
 				gui().unhighlight_reach();
 				current_paths_ = pathfind::paths();
@@ -733,7 +731,7 @@ void mouse_handler::select_hex(const map_location& hex, const bool browse, const
 
 	gui().select_hex(selected_hex_);
 	gui().clear_attack_indicator();
-	gui().set_route(NULL);
+	gui().set_route(nullptr);
 	show_partial_move_ = false;
 
 	wb::future_map_if_active planned_unit_map; //lasts for whole method
@@ -754,7 +752,7 @@ void mouse_handler::select_hex(const map_location& hex, const bool browse, const
 		// the highlight now comes from selection
 		// and not from the mouseover on an enemy
 		unselected_paths_ = false;
-		gui().set_route(NULL);
+		gui().set_route(nullptr);
 
 		// selection have impact only if we are not observing and it's our unit
 		if ((!commands_disabled || pc_.get_whiteboard()->is_active()) && u->side() == gui().viewing_side()) {
@@ -827,7 +825,7 @@ bool mouse_handler::move_unit_along_current_route()
 	const std::vector<map_location> steps = current_route_.steps;
 
 	// do not show footsteps during movement
-	gui().set_route(NULL);
+	gui().set_route(nullptr);
 	gui().unhighlight_reach();
 
 	// do not keep the hex highlighted that we started from
@@ -927,7 +925,7 @@ void mouse_handler::save_whiteboard_attack(const map_location& attacker_loc, con
 		gui().clear_attack_indicator();
 
 		// remove footsteps if any - useless for whiteboard as of now
-		gui().set_route(NULL);
+		gui().set_route(nullptr);
 
 		// do not keep the hex that we started from highlighted
 		selected_hex_ = map_location();
@@ -1069,7 +1067,7 @@ std::set<map_location> mouse_handler::get_adj_enemies(const map_location& loc, i
 
 	map_location adj[6];
 	get_adjacent_tiles(loc, adj);
-	BOOST_FOREACH(const map_location &aloc, adj) {
+	for(const map_location &aloc : adj) {
 		unit_map::const_iterator i = find_unit(aloc);
 		if (i && uteam.is_enemy(i->side()))
 			res.insert(aloc);
@@ -1096,7 +1094,7 @@ void mouse_handler::show_attack_options(const unit_map::const_iterator &u)
 	// Check each adjacent hex.
 	map_location adj[6];
 	get_adjacent_tiles(u->get_location(), adj);
-	BOOST_FOREACH(const map_location &loc, adj)
+	for(const map_location &loc : adj)
 	{
 		// No attack option shown if no visible unit present.
 		// (Visible to current team, not necessarily the unit's team.)
@@ -1171,7 +1169,7 @@ void mouse_handler::set_current_paths(const pathfind::paths & new_paths) {
 	gui().unhighlight_reach();
 	current_paths_ = new_paths;
 	current_route_.steps.clear();
-	gui().set_route(NULL);
+	gui().set_route(nullptr);
 	pc_.get_whiteboard()->erase_temp_move();
 }
 
@@ -1187,5 +1185,5 @@ team & mouse_handler::current_team() {
 	return pc_.gamestate().board_.teams_[side_num_ - 1];
 }
 
-mouse_handler *mouse_handler::singleton_ = NULL;
+mouse_handler *mouse_handler::singleton_ = nullptr;
 }

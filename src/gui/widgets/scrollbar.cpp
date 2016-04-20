@@ -18,9 +18,8 @@
 
 #include "gui/core/log.hpp"
 #include "gui/widgets/window.hpp" // Needed for invalidate_layout()
-#include "utils/foreach.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -40,15 +39,15 @@ tscrollbar_::tscrollbar_()
 	, positioner_offset_(0)
 	, positioner_length_(0)
 {
-	connect_signal<event::MOUSE_ENTER>(boost::bind(
+	connect_signal<event::MOUSE_ENTER>(std::bind(
 			&tscrollbar_::signal_handler_mouse_enter, this, _2, _3, _4));
-	connect_signal<event::MOUSE_MOTION>(boost::bind(
+	connect_signal<event::MOUSE_MOTION>(std::bind(
 			&tscrollbar_::signal_handler_mouse_motion, this, _2, _3, _4, _5));
-	connect_signal<event::MOUSE_LEAVE>(boost::bind(
+	connect_signal<event::MOUSE_LEAVE>(std::bind(
 			&tscrollbar_::signal_handler_mouse_leave, this, _2, _3));
-	connect_signal<event::LEFT_BUTTON_DOWN>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_DOWN>(std::bind(
 			&tscrollbar_::signal_handler_left_button_down, this, _2, _3));
-	connect_signal<event::LEFT_BUTTON_UP>(boost::bind(
+	connect_signal<event::LEFT_BUTTON_UP>(std::bind(
 			&tscrollbar_::signal_handler_left_button_up, this, _2, _3));
 }
 
@@ -97,7 +96,7 @@ void tscrollbar_::scroll(const tscroll scroll)
 			assert(false);
 	}
 
-	fire(event::NOTIFY_MODIFIED, *this, NULL);
+	fire(event::NOTIFY_MODIFIED, *this, nullptr);
 }
 
 void tscrollbar_::place(const tpoint& origin, const tpoint& size)
@@ -150,7 +149,7 @@ void tscrollbar_::set_item_position(const unsigned item_position)
 void tscrollbar_::update_canvas()
 {
 
-	FOREACH(AUTO & tmp, canvas())
+	for(auto & tmp : canvas())
 	{
 		tmp.set_variable("positioner_offset", variant(positioner_offset_));
 		tmp.set_variable("positioner_length", variant(positioner_length_));
@@ -281,7 +280,7 @@ void tscrollbar_::move_positioner(const int distance)
 
 		child_callback_positioner_moved();
 
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire(event::NOTIFY_MODIFIED, *this, nullptr);
 
 		// positioner_moved_notifier_.notify();
 	}
@@ -307,7 +306,7 @@ void tscrollbar_::move_positioner(const int distance)
 void tscrollbar_::load_config_extra()
 {
 	// These values won't change so set them here.
-	FOREACH(AUTO & tmp, canvas())
+	for(auto & tmp : canvas())
 	{
 		tmp.set_variable("offset_before", variant(offset_before()));
 		tmp.set_variable("offset_after", variant(offset_after()));
@@ -402,11 +401,11 @@ void tscrollbar_::signal_handler_left_button_down(const event::tevent event,
 
 	if(bar == -1) {
 		scroll(HALF_JUMP_BACKWARDS);
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire(event::NOTIFY_MODIFIED, *this, nullptr);
 		// positioner_moved_notifier_.notify();
 	} else if(bar == 1) {
 		scroll(HALF_JUMP_FORWARD);
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire(event::NOTIFY_MODIFIED, *this, nullptr);
 		// positioner_moved_notifier_.notify();
 	} else {
 		assert(bar == 0);

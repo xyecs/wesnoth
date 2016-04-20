@@ -183,7 +183,7 @@ public:
 	void list_item_clicked(twidget& caller);
 
 	/** See @ref tcontainer_::set_self_active. */
-	virtual void set_self_active(const bool active) OVERRIDE;
+	virtual void set_self_active(const bool active) override;
 
 	/**
 	 * Request to update the size of the content after changing the content.
@@ -204,25 +204,25 @@ public:
 	/***** ***** ***** ***** inherited ***** ***** ****** *****/
 
 	/** See @ref twidget::place. */
-	virtual void place(const tpoint& origin, const tpoint& size) OVERRIDE;
+	virtual void place(const tpoint& origin, const tpoint& size) override;
 
 	/** See @ref twidget::layout_children. */
-	virtual void layout_children() OVERRIDE;
+	virtual void layout_children() override;
 
 	/** See @ref twidget::child_populate_dirty_list. */
 	virtual void
 	child_populate_dirty_list(twindow& caller,
-							  const std::vector<twidget*>& call_stack) OVERRIDE;
+							  const std::vector<twidget*>& call_stack) override;
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 	void
-	set_callback_item_change(const boost::function<void(size_t)>& callback)
+	set_callback_item_change(const std::function<void(size_t)>& callback)
 	{
 		callback_item_changed_ = callback;
 	}
 
 	void
-	set_callback_value_change(const boost::function<void(twidget&)>& callback)
+	set_callback_value_change(const std::function<void(twidget&)>& callback)
 	{
 		callback_value_changed_ = callback;
 	}
@@ -295,7 +295,7 @@ private:
 	 *
 	 * The function is passed the index of the toggled item.
 	 */
-	boost::function<void(size_t)> callback_item_changed_;
+	std::function<void(size_t)> callback_item_changed_;
 
 	/**
 	 * This callback is called when the value in the listbox changes.
@@ -304,7 +304,7 @@ private:
 	 * there might be too many calls. That might happen if an arrow up didn't
 	 * change the selected item.
 	 */
-	boost::function<void(twidget&)> callback_value_changed_;
+	std::function<void(twidget&)> callback_value_changed_;
 
 	bool need_layout_;
 
@@ -346,7 +346,7 @@ private:
 	virtual void set_content_size(const tpoint& origin, const tpoint& size);
 
 	/** See @ref tcontrol::get_control_type. */
-	virtual const std::string& get_control_type() const OVERRIDE;
+	virtual const std::string& get_control_type() const override;
 
 	void order_by_column(unsigned column, twidget& widget);
 };

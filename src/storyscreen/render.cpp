@@ -33,8 +33,6 @@
 #include "video.hpp"
 #include "widgets/button.hpp"
 
-#include <boost/foreach.hpp>
-
 static lg::log_domain log_engine("engine");
 #define ERR_NG  LOG_STREAM(err,  log_engine)
 #define WARN_NG LOG_STREAM(warn, log_engine)
@@ -105,7 +103,7 @@ part_ui::part_ui(part &p, CVideo& video, gui::button &next_button,
 	, background_images_()
 	, background_positions_()
 #else
-	, background_(NULL)
+	, background_(nullptr)
 #endif
 	, imgs_()
 	, has_background_(false)
@@ -125,7 +123,7 @@ void part_ui::prepare_background()
 	has_background_ = false;
 	bool no_base_yet = true;
 
-	BOOST_FOREACH(const background_layer& bl, p_.get_background_layers()) {
+	for (const background_layer& bl : p_.get_background_layers()) {
 		sdl::timage layer;
 
 		if (!bl.file().empty()) {
@@ -194,7 +192,7 @@ void part_ui::prepare_background()
 	bool no_base_yet = true;
 
 	// Build background surface
-	BOOST_FOREACH(const background_layer& bl, p_.get_background_layers()) {
+	for (const background_layer& bl : p_.get_background_layers()) {
 		surface layer;
 
 		if(bl.file().empty() != true) {
@@ -256,7 +254,7 @@ void part_ui::prepare_background()
 		}
 
 		blit_surface(layer, &srect, background_, &drect);
-		ASSERT_LOG(layer.null() == false, "Oops: a storyscreen part background layer got NULL");
+		ASSERT_LOG(layer.null() == false, "Oops: a storyscreen part background layer got nullptr");
 
 		if (bl.is_base_layer() || no_base_yet) {
 			x_scale_factor_ = x_scale_factor;
@@ -303,7 +301,7 @@ void part_ui::prepare_geometry()
 void part_ui::prepare_floating_images()
 {
 	// Build floating image surfaces
-	BOOST_FOREACH(const floating_image& fi, p_.get_floating_images()) {
+	for (const floating_image& fi : p_.get_floating_images()) {
 		imgs_.push_back( fi.get_render_input(x_scale_factor_, y_scale_factor_, base_rect_) );
 	}
 }
@@ -314,7 +312,7 @@ void part_ui::render_background()
 			0, 0, video_.getx(), video_.gety(), 0, 0, 0, 1.0,
 			video_.getSurface()
 	);
-	sdl_blit(background_, NULL, video_.getSurface(), NULL);
+	sdl_blit(background_, nullptr, video_.getSurface(), nullptr);
 	// Render the titlebox over the background
 	render_title_box();
 }
@@ -326,7 +324,7 @@ bool part_ui::render_floating_images()
 	last_key_ = true;
 
 	size_t fi_n = 0;
-	BOOST_FOREACH(floating_image::render_input& ri, imgs_) {
+	for (floating_image::render_input& ri : imgs_) {
 		const floating_image& fi = p_.get_floating_images()[fi_n];
 
 		if(!ri.image.null()) {
@@ -356,7 +354,7 @@ bool part_ui::render_floating_images()
 	last_key_ = true;
 
 	size_t fi_n = 0;
-	BOOST_FOREACH(floating_image::render_input& ri, imgs_) {
+	for (floating_image::render_input& ri : imgs_) {
 		const floating_image& fi = p_.get_floating_images()[fi_n];
 
 		if(!ri.image.null()) {
@@ -364,7 +362,7 @@ bool part_ui::render_floating_images()
 			for (size_t i = 0; i <= fi_n; i++)
 			{
 				floating_image::render_input& old_ri = imgs_[i];
-				sdl_blit(old_ri.image, NULL, video_.getSurface(), &old_ri.rect);
+				sdl_blit(old_ri.image, nullptr, video_.getSurface(), &old_ri.rect);
 				update_rect(old_ri.rect);
 			}
 		}
@@ -580,8 +578,8 @@ void part_ui::render_story_box_borders(SDL_Rect& update_area)
 	const part::BLOCK_LOCATION tbl = p_.story_text_location();
 
 	if(has_background_) {
-		surface border_top = NULL;
-		surface border_bottom = NULL;
+		surface border_top = nullptr;
+		surface border_bottom = nullptr;
 
 		if(tbl == part::BLOCK_BOTTOM || tbl == part::BLOCK_MIDDLE) {
 			border_top = image::get_image(storybox_top_border_path);

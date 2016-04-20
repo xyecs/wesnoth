@@ -29,8 +29,7 @@
 #include "preferences.hpp"
 #include "formula/string_utils.hpp"
 
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
+#include "utils/functional.hpp"
 
 #include "gettext.hpp"
 
@@ -76,7 +75,7 @@ static ttoggle_button * setup_pref_toggle_button(const std::string & id, bool de
 	//Needed to disambiguate overloaded function
 	void (*set) (const std::string &, bool) = &preferences::set;
 
-	connect_signal_mouse_left_click(*b, boost::bind(set, id, boost::bind(&ttoggle_button::get_value_bool, b)));
+	connect_signal_mouse_left_click(*b, std::bind(set, id, std::bind(&ttoggle_button::get_value_bool, b)));
 
 	return b;
 }
@@ -111,7 +110,7 @@ static void set_pref_and_button(const std::string & id, bool value, twindow & wi
 
 static void revert_to_default_pref_values(twindow & window)
 {
-	BOOST_FOREACH(const std::string & i, mp_ui_alerts::items) {
+	for (const std::string & i : mp_ui_alerts::items) {
 		set_pref_and_button(i+"_sound", mp_ui_alerts::get_def_pref_sound(i), window);
 		set_pref_and_button(i+"_notif", mp_ui_alerts::get_def_pref_notif(i), window);
 		set_pref_and_button(i+"_lobby", mp_ui_alerts::get_def_pref_lobby(i), window);
@@ -126,7 +125,7 @@ tmp_alerts_options::tmp_alerts_options()
 
 void tmp_alerts_options::pre_show(twindow& window)
 {
-	BOOST_FOREACH(const std::string & i, mp_ui_alerts::items) {
+	for (const std::string & i : mp_ui_alerts::items) {
 		setup_item(i, window);
 	}
 
@@ -150,7 +149,7 @@ void tmp_alerts_options::pre_show(twindow& window)
 
 	tbutton * defaults;
 	defaults = &find_widget<tbutton>(&window,"revert_to_defaults", false);
-	connect_signal_mouse_left_click(*defaults, boost::bind(&revert_to_default_pref_values, boost::ref(window)));
+	connect_signal_mouse_left_click(*defaults, std::bind(&revert_to_default_pref_values, std::ref(window)));
 }
 
 void tmp_alerts_options::post_show(twindow& /*window*/)

@@ -38,9 +38,7 @@
 #include "team.hpp"
 #include "units/unit.hpp"
 
-#include "utils/foreach.hpp"
-
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -101,7 +99,7 @@ static std::string format_stats(const unit& u)
 	const std::string name = "<span size='large'>" + (!u.name().empty() ? u.name() : " ") + "</span>";
 	std::string traits;
 
-	BOOST_FOREACH(const std::string& trait, u.trait_names()) {
+	for(const std::string& trait : u.trait_names()) {
 		traits += (traits.empty() ? "" : ", ") + trait;
 	}
 
@@ -142,7 +140,7 @@ static std::string get_image_mods(const unit& u)
 		res += "~BLIT(" + unit::leader_crown() + ")";
 	}
 
-	BOOST_FOREACH(const std::string& overlay, u.overlays()) {
+	for(const std::string& overlay : u.overlays()) {
 		res += "~BLIT(" + overlay + ")";
 	}
 
@@ -183,7 +181,7 @@ static void set_weapon_info(twindow& window,
 	const config empty;
 	const attack_type no_weapon(empty);
 
-	FOREACH(const AUTO & weapon, weapons)
+	for(const auto & weapon : weapons)
 	{
 		const battle_context_unit_stats& attacker = weapon.get_attacker_stats();
 		const battle_context_unit_stats& defender = weapon.get_defender_stats();
@@ -269,17 +267,17 @@ void tunit_attack::pre_show(twindow& window)
 {
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "attacker_profile", false),
-			boost::bind(&tunit_attack::profile_button_callback, this, boost::ref(window),
+			std::bind(&tunit_attack::profile_button_callback, this, std::ref(window),
 			(*attacker_itor_).type_id()));
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "defender_profile", false),
-			boost::bind(&tunit_attack::profile_button_callback, this,  boost::ref(window),
+			std::bind(&tunit_attack::profile_button_callback, this,  std::ref(window),
 			(*defender_itor_).type_id()));
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "damage_calculation", false),
-			boost::bind(&tunit_attack::damage_calc_callback, this, boost::ref(window)));
+			std::bind(&tunit_attack::damage_calc_callback, this, std::ref(window)));
 
 	set_attacker_info(window, *attacker_itor_);
 	set_defender_info(window, *defender_itor_);

@@ -62,7 +62,7 @@ namespace lg {
  * Helper class to redirect the output of the logger in a certain scope.
  *
  * The main usage of the redirection is for the unit tests to validate the
- * ourput on the logger with the expected output.
+ * output on the logger with the expected output.
  */
 class tredirect_output_setter
 {
@@ -146,14 +146,14 @@ class scope_logger
 public:
 	scope_logger(log_domain const &domain, const char* str) :
 		ticks_(0),
-		output_(NULL),
+		output_(nullptr),
 		str_()
 	{
 		if (!debug().dont_log(domain)) do_log_entry(domain, str);
 	}
 	scope_logger(log_domain const &domain, const std::string& str) :
 		ticks_(0),
-		output_(NULL),
+		output_(nullptr),
 		str_()
 	{
 		if (!debug().dont_log(domain)) do_log_entry(domain, str);

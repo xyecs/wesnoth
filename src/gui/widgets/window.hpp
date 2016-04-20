@@ -33,7 +33,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "utils/boost_function_guarded.hpp"
 
 class CVideo;
 
@@ -102,7 +101,7 @@ public:
 	 *
 	 * @param handle              The instance id of the window.
 	 *
-	 * @returns                   The window or NULL.
+	 * @returns                   The window or nullptr.
 	 */
 	static twindow* window_instance(const unsigned handle);
 
@@ -281,11 +280,11 @@ public:
 
 	/** See @ref twidget::find_at. */
 	virtual twidget* find_at(const tpoint& coordinate,
-							 const bool must_be_active) OVERRIDE;
+							 const bool must_be_active) override;
 
 	/** See @ref twidget::find_at. */
 	virtual const twidget* find_at(const tpoint& coordinate,
-								   const bool must_be_active) const OVERRIDE;
+								   const bool must_be_active) const override;
 
 	/** Inherited from twidget. */
 	tdialog* dialog()
@@ -294,11 +293,11 @@ public:
 	}
 
 	/** See @ref twidget::find. */
-	twidget* find(const std::string& id, const bool must_be_active) OVERRIDE;
+	twidget* find(const std::string& id, const bool must_be_active) override;
 
 	/** See @ref twidget::find. */
 	const twidget* find(const std::string& id,
-						const bool must_be_active) const OVERRIDE;
+						const bool must_be_active) const override;
 
 #if 0
 	/** @todo Implement these functions. */
@@ -669,16 +668,7 @@ private:
 	Uint8 mouse_button_state_;
 
 	/** See @ref tcontrol::get_control_type. */
-	virtual const std::string& get_control_type() const OVERRIDE;
-
-	/**
-	 * Inherited from tpanel.
-	 *
-	 * Don't call this function it's only asserts.
-	 */
-	void draw(surface& surface,
-			  const bool force = false,
-			  const bool invalidate_background = false);
+	virtual const std::string& get_control_type() const override;
 
 	/**
 	 * The list with dirty items in the window.

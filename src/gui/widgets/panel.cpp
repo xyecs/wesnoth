@@ -22,7 +22,7 @@
 #include "gettext.hpp"
 #include "wml_exception.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -190,7 +190,7 @@ namespace implementation
 {
 
 tbuilder_panel::tbuilder_panel(const config& cfg)
-	: tbuilder_control(cfg), grid(NULL)
+	: tbuilder_control(cfg), grid(nullptr)
 {
 	const config& c = cfg.child("grid");
 

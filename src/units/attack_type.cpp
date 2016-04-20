@@ -20,11 +20,12 @@
 #include "global.hpp"
 
 #include "units/attack_type.hpp"
+#include "formula/callable_objects.hpp"
+#include "formula/formula.hpp"
 
 #include "log.hpp"
 #include "serialization/string_utils.hpp"
 #include "gettext.hpp"
-#include <boost/foreach.hpp>
 
 static lg::log_domain log_config("config");
 #define ERR_CF LOG_STREAM(err, log_config)
@@ -40,7 +41,7 @@ attack_type::attack_type(const config& cfg) :
 	self_loc_(),
 	other_loc_(),
 	is_attacker_(false),
-	other_attack_(NULL),
+	other_attack_(nullptr),
 	description_(cfg["description"].t_str()),
 	id_(cfg["name"]),
 	type_(cfg["type"]),
@@ -96,14 +97,31 @@ static bool matches_simple_filter(const attack_type & attack, const config & fil
 {
 	const std::vector<std::string>& filter_range = utils::split(filter["range"]);
 	const std::string& filter_damage = filter["damage"];
+	const std::string& filter_attacks = filter["number"];
+	const std::string& filter_accuracy = filter["accuracy"];
+	const std::string& filter_parry = filter["parry"];
+	const std::string& filter_movement = filter["movement_used"];
 	const std::vector<std::string> filter_name = utils::split(filter["name"]);
 	const std::vector<std::string> filter_type = utils::split(filter["type"]);
 	const std::string filter_special = filter["special"];
+	const std::string filter_formula = filter["formula"];
 
 	if ( !filter_range.empty() && std::find(filter_range.begin(), filter_range.end(), attack.range()) == filter_range.end() )
 		return false;
 
 	if ( !filter_damage.empty() && !in_ranges(attack.damage(), utils::parse_ranges(filter_damage)) )
+		return false;
+
+	if (!filter_attacks.empty() && !in_ranges(attack.num_attacks(), utils::parse_ranges(filter_attacks)))
+		return false;
+	
+	if (!filter_accuracy.empty() && !in_ranges(attack.accuracy(), utils::parse_ranges(filter_accuracy)))
+		return false;
+	
+	if (!filter_parry.empty() && !in_ranges(attack.parry(), utils::parse_ranges(filter_parry)))
+		return false;
+	
+	if (!filter_movement.empty() && !in_ranges(attack.movement_used(), utils::parse_ranges(filter_movement)))
 		return false;
 
 	if ( !filter_name.empty() && std::find(filter_name.begin(), filter_name.end(), attack.id()) == filter_name.end() )
@@ -114,6 +132,21 @@ static bool matches_simple_filter(const attack_type & attack, const config & fil
 
 	if ( !filter_special.empty() && !attack.get_special_bool(filter_special, true) )
 		return false;
+	
+	if (!filter_formula.empty()) {
+		try {
+			const attack_type_callable callable(attack);
+			const game_logic::formula form(filter_formula);
+			if(!form.evaluate(callable).as_bool()) {
+				return false;
+			}
+			return true;
+		} catch(game_logic::formula_error& e) {
+			lg::wml_error() << "Formula error in weapon filter: " << e.type << " at " << e.filename << ':' << e.line << ")\n";
+			// Formulae with syntax errors match nothing
+			return false;
+		}
+	}
 
 	// Passed all tests.
 	return true;
@@ -128,7 +161,7 @@ bool attack_type::matches_filter(const config& filter) const
 	bool matches = matches_simple_filter(*this, filter);
 
 	// Handle [and], [or], and [not] with in-order precedence
-	BOOST_FOREACH( const config::any_child &condition, filter.all_children_range() )
+	for (const config::any_child &condition : filter.all_children_range() )
 	{
 		// Handle [and]
 		if ( condition.key == "and" )
@@ -204,7 +237,7 @@ bool attack_type::apply_modification(const config& cfg)
 	if(del_specials.empty() == false) {
 		const std::vector<std::string>& dsl = utils::split(del_specials);
 		config new_specials;
-		BOOST_FOREACH(const config::any_child &vp, specials_.all_children_range()) {
+		for (const config::any_child &vp : specials_.all_children_range()) {
 			std::vector<std::string>::const_iterator found_id =
 				std::find(dsl.begin(), dsl.end(), vp.cfg["id"].str());
 			if (found_id == dsl.end()) {
@@ -219,7 +252,7 @@ bool attack_type::apply_modification(const config& cfg)
 		if (mode != "append") {
 			specials_.clear();
 		}
-		BOOST_FOREACH(const config::any_child &value, set_specials.all_children_range()) {
+		for (const config::any_child &value : set_specials.all_children_range()) {
 			specials_.add_child(value.key, value.cfg);
 		}
 	}
@@ -302,7 +335,7 @@ bool attack_type::describe_modification(const config& cfg,std::string* descripti
 		return false;
 
 	// Did the caller want the description?
-	if(description != NULL) {
+	if(description != nullptr) {
 		const std::string& increase_damage = cfg["increase_damage"];
 		const std::string& set_damage = cfg["set_damage"];
 		const std::string& increase_attacks = cfg["increase_attacks"];

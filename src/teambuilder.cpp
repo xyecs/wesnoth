@@ -26,7 +26,6 @@
 #include "game_errors.hpp"
 #include "formula/string_utils.hpp"
 
-#include <boost/foreach.hpp>
 #include <deque>
 #include <vector>
 
@@ -48,7 +47,7 @@ public:
 		, seen_ids_()
 		, side_(0)
 		, side_cfg_(side_cfg)
-		, t_(NULL)
+		, t_(nullptr)
 		, teams_(teams)
 		, unit_configs_()
 	{
@@ -65,7 +64,7 @@ public:
 		//create a new instance of team and push it to back of resources::teams vector
 		new_team();
 
-		assert(t_!=NULL);
+		assert(t_!=nullptr);
 
 		//set team objectives if necessary
 		objectives();
@@ -181,7 +180,7 @@ protected:
 		// can be recruited for the player, add them.
 		if (!side_cfg_) return;
 		if (const config::attribute_value *v = side_cfg_.get("previous_recruits")) {
-			BOOST_FOREACH(const std::string &rec, utils::split(*v)) {
+			for (const std::string &rec : utils::split(*v)) {
 				DBG_NG_TC << "adding previous recruit: " << rec << '\n';
 				t_->add_recruit(rec);
 			}
@@ -215,7 +214,7 @@ protected:
 			if ( seen_ids_.find(id)!=seen_ids_.end() ) {
 				//seen before
 				config u_tmp = u;
-				u_tmp["side"] = str_cast(side_);
+				u_tmp["side"] = std::to_string(side_);
 				t_->recall_list().add(unit_ptr(new unit(u_tmp,true)));
 			} else {
 				//not seen before
@@ -235,7 +234,7 @@ protected:
 		config & stored = leader_configs_.back();
 
 		// Remove the attributes used to define a side.
-		BOOST_FOREACH( const std::string & attr , team::attributes) {
+		for (const std::string & attr : team::attributes) {
 			stored.remove_attribute(attr);
 		}
 
@@ -261,7 +260,7 @@ protected:
 		if (side_cfg_.has_attribute("type") && side_cfg_["type"] != "null" ) {
 			handle_leader(side_cfg_);
 		}
-		BOOST_FOREACH(const config &l, side_cfg_.child_range("leader")) {
+		for (const config &l : side_cfg_.child_range("leader")) {
 			handle_leader(l);
 		}
 	}
@@ -276,7 +275,7 @@ protected:
 		//for create-or-recall semantics to work: for each unit with non-empty
 		//id, unconditionally put OTHER, later, units with same id directly to
 		//recall list, not including them in unit_configs_
-		BOOST_FOREACH(const config &su, side_cfg_.child_range("unit")) {
+		for (const config &su : side_cfg_.child_range("unit")) {
 			handle_unit(su, "side_cfg");
 		}
 	}
@@ -294,7 +293,7 @@ protected:
 			.allow_rename_side(true)
 			.allow_show(false);
 
-		BOOST_FOREACH(const config *u, unit_configs_) {
+		for (const config *u : unit_configs_) {
 			uc.add_unit(*u);
 		}
 	}

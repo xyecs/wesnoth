@@ -28,6 +28,7 @@ class vconfig;
 #include "scripting/lua_types.hpp"
 #include "variable_info.hpp"
 #include "map/location.hpp"
+#include <vector>
 
 namespace lua_common {
 	int intf_textdomain(lua_State *L);
@@ -139,7 +140,17 @@ vconfig luaW_checkvconfig(lua_State *L, int index, bool allow_missing = false);
  * value is not nil.
  * @return true if an element was pushed.
  */
-bool luaW_getglobal(lua_State *L, ...);
+bool luaW_getglobal(lua_State *L, const std::vector<std::string>& path);
+
+/**
+ * Pushes the value found by following the variadic names (char *), if the
+ * value is not nil.
+ * @return true if an element was pushed.
+ */
+template<typename... T>
+bool luaW_getglobal(lua_State *L, T... path) {
+	return luaW_getglobal(L, std::vector<std::string> {path...} );
+}
 
 bool luaW_toboolean(lua_State *L, int n);
 
@@ -201,7 +212,7 @@ bool luaW_checkvariable(lua_State *L, variable_access_create& v, int n);
 		const std::vector<std::string>& vector = accessor; \
 		lua_createtable(L, vector.size(), 0); \
 		int i = 1; \
-		BOOST_FOREACH(const std::string& s, vector) { \
+		for (const std::string& s : vector) { \
 			lua_pushstring(L, s.c_str()); \
 			lua_rawseti(L, -2, i); \
 			++i; \

@@ -17,7 +17,6 @@
 #include "map/location.hpp"
 #include "config.hpp"
 #include "time_of_day.hpp"
-#include "savegame_config.hpp"
 
 #include <boost/optional.hpp>
 
@@ -31,7 +30,7 @@ namespace random_new
 }
 
 //time of day and turn functionality
-class tod_manager : public savegame::savegame_config
+class tod_manager
 {
 	public:
 	explicit tod_manager(const config& scenario_cfg = config());
@@ -47,6 +46,7 @@ class tod_manager : public savegame::savegame_config
 
 		void set_current_time(int time);
 		void set_current_time(int time, int area_index);
+		void set_current_time(int time, const std::string& area_id);
 		void set_area_id(int area_index, const std::string& id);
 
 		/**
@@ -157,9 +157,9 @@ class tod_manager : public savegame::savegame_config
 		void set_number_of_turns_by_wml(int num);
 
 		/** Dynamically change the current turn number. */
-		void set_turn(const int num, game_data* vars = NULL, const bool increase_limit_if_needed = true);
+		void set_turn(const int num, game_data* vars = nullptr, const bool increase_limit_if_needed = true);
 		/** Dynamically change the current turn number. */
-		void set_turn_by_wml(const int num, game_data* vars = NULL, const bool increase_limit_if_needed = true);
+		void set_turn_by_wml(const int num, game_data* vars = nullptr, const bool increase_limit_if_needed = true);
 
 		/**
 		 * Function to move to the next turn.

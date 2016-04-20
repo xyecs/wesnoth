@@ -34,10 +34,10 @@
 #include "gui/widgets/tree_view_node.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/window.hpp"
-#include "utils/foreach.hpp"
 #include "serialization/string_utils.hpp"
 
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
+#include "video.hpp"
 
 namespace gui2
 {
@@ -128,9 +128,9 @@ void tcampaign_selection::pre_show(twindow& window)
 				= find_widget<ttree_view>(&window, "campaign_tree", false);
 
 		tree.set_selection_change_callback(
-				boost::bind(&tcampaign_selection::campaign_selected,
+				std::bind(&tcampaign_selection::campaign_selected,
 							this,
-							boost::ref(window)));
+							std::ref(window)));
 
 		window.keyboard_capture(&tree);
 
@@ -141,7 +141,7 @@ void tcampaign_selection::pre_show(twindow& window)
 				= find_widget<tmulti_page>(&window, "campaign_details", false);
 
 		unsigned id = 0;
-		FOREACH(const AUTO & level, engine_.get_levels_by_type_unfiltered(ng::level::TYPE::SP_CAMPAIGN))
+		for(const auto & level : engine_.get_levels_by_type_unfiltered(ng::level::TYPE::SP_CAMPAIGN))
 		{
 			const config& campaign = level->data();
 
@@ -155,7 +155,7 @@ void tcampaign_selection::pre_show(twindow& window)
 			tree_group_field["label"] = campaign["completed"].to_bool() ? "misc/laurel.png" : "misc/blank-hex.png";
 			tree_group_item["victory"] = tree_group_field;
 
-			tree.add_node("campaign", tree_group_item).set_id(lexical_cast<std::string>(id++));
+			tree.add_node("campaign", tree_group_item).set_id(std::to_string(id++));
 
 			/*** Add detail item ***/
 			string_map detail_item;
@@ -185,7 +185,7 @@ void tcampaign_selection::pre_show(twindow& window)
 
 			id = 0;
 			tree_group_item.clear();
-			FOREACH(const AUTO& mod, engine_.get_const_extras_by_type(ng::create_engine::MOD))
+			for(const auto& mod : engine_.get_const_extras_by_type(ng::create_engine::MOD))
 			{
 				bool active = std::find(enabled.begin(), enabled.end(), mod->id) != enabled.end();
 				/*** Add tree item ***/
@@ -197,7 +197,7 @@ void tcampaign_selection::pre_show(twindow& window)
 				VALIDATE(checkbox, missing_widget("checkb"));
 				checkbox->set_value(active);
 				checkbox->set_label(mod->name);
-				checkbox->set_callback_state_change(boost::bind(&tcampaign_selection::mod_toggled, this, id, _1));
+				checkbox->set_callback_state_change(std::bind(&tcampaign_selection::mod_toggled, this, id, _1));
 				++id;
 			}
 		}
@@ -214,9 +214,9 @@ void tcampaign_selection::pre_show(twindow& window)
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 		connect_signal_notify_modified(
 				list,
-				boost::bind(&tcampaign_selection::campaign_selected,
+				std::bind(&tcampaign_selection::campaign_selected,
 							this,
-							boost::ref(window)));
+							std::ref(window)));
 #else
 		list.set_callback_value_change(
 				dialog_callback<tcampaign_selection,
@@ -228,7 +228,7 @@ void tcampaign_selection::pre_show(twindow& window)
 		tmulti_page& multi_page
 				= find_widget<tmulti_page>(&window, "campaign_details", false);
 
-		FOREACH(const AUTO & level, engine_.get_levels_by_type_unfiltered(ng::level::TYPE::SP_CAMPAIGN))
+		for(const auto & level : engine_.get_levels_by_type_unfiltered(ng::level::TYPE::SP_CAMPAIGN))
 		{
 			const config& campaign = level->data();
 
@@ -273,7 +273,7 @@ void tcampaign_selection::pre_show(twindow& window)
 			find_widget<tbutton>(&window, "advanced_settings", false, false);
 	if(advanced_settings_button) {
 		advanced_settings_button->connect_click_handler(
-			boost::bind(&tcampaign_selection::show_settings, this, boost::ref(window.video())));
+			std::bind(&tcampaign_selection::show_settings, this, std::ref(window.video())));
 	}
 }
 

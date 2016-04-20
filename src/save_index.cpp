@@ -13,7 +13,6 @@
    See the COPYING file for more details.
 */
 
-#include <boost/assign/list_of.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "save_index.hpp"
@@ -30,7 +29,6 @@
 
 #include "filesystem.hpp"
 #include "config.hpp"
-#include <boost/foreach.hpp>
 
 static lg::log_domain log_engine("engine");
 #define LOG_SAVE LOG_STREAM(info, log_engine)
@@ -68,7 +66,7 @@ void save_index_class::rebuild(const std::string& name, const time_t& modified) 
 	} catch(game::load_game_failed&) {
 		summary["corrupt"] = true;
 		}
-	summary["mod_time"] = str_cast(static_cast<int>(modified));
+	summary["mod_time"] = std::to_string(static_cast<int>(modified));
 	write_save_index();
 }
 
@@ -234,7 +232,7 @@ bool save_info_less_time::operator() (const save_info& a, const save_info& b) co
 }
 
 static std::istream* find_save_file(const std::string &name, const std::string &alt_name, const std::vector<std::string> &suffixes) {
-	BOOST_FOREACH(const std::string &suf, suffixes) {
+	for (const std::string &suf : suffixes) {
 		std::istream *file_stream = filesystem::istream_file(filesystem::get_saves_dir() + "/" + name + suf);
 		if (file_stream->fail()) {
 			delete file_stream;
@@ -254,7 +252,7 @@ void read_save_file(const std::string& name, config& cfg, std::string* error_log
 	std::string modified_name = name;
 	replace_space2underbar(modified_name);
 
-	static const std::vector<std::string> suffixes = boost::assign::list_of("")(".gz")(".bz2");
+	static const std::vector<std::string> suffixes = {"", ".gz", ".bz2"};
 	filesystem::scoped_istream file_stream = find_save_file(modified_name, name, suffixes);
 
 	cfg.clear();
@@ -297,7 +295,7 @@ void remove_old_auto_saves(const int autosavemax, const int infinite_auto_saves)
 	if (countdown == infinite_auto_saves)
 		return;
 
-	std::vector<save_info> games = get_saves_list(NULL, &auto_save);
+	std::vector<save_info> games = get_saves_list(nullptr, &auto_save);
 	for (std::vector<save_info>::iterator i = games.begin(); i != games.end(); ++i) {
 		if (countdown-- <= 0) {
 			LOG_SAVE << "Deleting savegame '" << i->name() << "'\n";
@@ -377,7 +375,7 @@ void extract_summary_from_config(config& cfg_save, config& cfg_summary)
 	std::string leader_image;
 	std::string leader_image_tc_modifier;
 
-	//BOOST_FOREACH(const config &p, cfg_save.child_range("player"))
+	//for (const config &p : cfg_save.child_range("player"))
 	//{
 	//	if (p["canrecruit"].to_bool(false))) {
 	//		leader = p["save_id"];
@@ -390,7 +388,7 @@ void extract_summary_from_config(config& cfg_save, config& cfg_summary)
 	//{
 		if (const config &snapshot = *(has_snapshot ? &cfg_snapshot : &cfg_replay_start))
 		{
-			BOOST_FOREACH(const config &side, snapshot.child_range("side"))
+			for (const config &side : snapshot.child_range("side"))
 			{
 				if (side["controller"] != team::CONTROLLER::enum_to_string(team::CONTROLLER::HUMAN)) {
 					continue;
@@ -408,7 +406,7 @@ void extract_summary_from_config(config& cfg_save, config& cfg_summary)
 						break;
 				}
 
-				BOOST_FOREACH(const config &u, side.child_range("unit"))
+				for (const config &u : side.child_range("unit"))
 				{
 					if (u["canrecruit"].to_bool()) {
 						leader = u["id"].str();

@@ -41,11 +41,10 @@
 #include "language.hpp"
 #include "preferences_display.hpp"
 #include "savegame.hpp"
-#include "utils/foreach.hpp"
 #include "serialization/string_utils.hpp"
 
 #include <cctype>
-#include <boost/bind.hpp>
+#include "utils/functional.hpp"
 
 namespace gui2
 {
@@ -115,16 +114,16 @@ void tgame_load::pre_show(twindow& window)
 			= find_widget<ttext_box>(&window, "txtFilter", false, true);
 
 	filter->set_text_changed_callback(
-			boost::bind(&tgame_load::filter_text_changed, this, _1, _2));
+			std::bind(&tgame_load::filter_text_changed, this, _1, _2));
 
 	tlistbox* list
 			= find_widget<tlistbox>(&window, "savegame_list", false, true);
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 	connect_signal_notify_modified(*list,
-								   boost::bind(&tgame_load::list_item_clicked,
+								   std::bind(&tgame_load::list_item_clicked,
 											   *this,
-											   boost::ref(window)));
+											   std::ref(window)));
 #else
 	list->set_callback_value_change(
 			dialog_callback<tgame_load, &tgame_load::list_item_clicked>);
@@ -139,9 +138,9 @@ void tgame_load::pre_show(twindow& window)
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "delete", false),
-			boost::bind(&tgame_load::delete_button_callback,
+			std::bind(&tgame_load::delete_button_callback,
 						this,
-						boost::ref(window)));
+						std::ref(window)));
 
 	display_savegame(window);
 }
@@ -172,7 +171,7 @@ void tgame_load::fill_game_list(twindow& window,
 	tlistbox& list = find_widget<tlistbox>(&window, "savegame_list", false);
 	list.clear();
 
-	FOREACH(const AUTO & game, games)
+	for(const auto & game : games)
 	{
 		std::map<std::string, string_map> data;
 		string_map item;
@@ -188,11 +187,11 @@ void tgame_load::fill_game_list(twindow& window,
 		list.add_row(data);
 	}
 	std::vector<tgenerator_::torder_func> order_funcs(2);
-	order_funcs[0] = boost::bind(&tgame_load::compare_name, this, _1, _2);
-	order_funcs[1] = boost::bind(&tgame_load::compare_name_rev, this, _1, _2);
+	order_funcs[0] = std::bind(&tgame_load::compare_name, this, _1, _2);
+	order_funcs[1] = std::bind(&tgame_load::compare_name_rev, this, _1, _2);
 	list.set_column_order(0, order_funcs);
-	order_funcs[0] = boost::bind(&tgame_load::compare_date, this, _1, _2);
-	order_funcs[1] = boost::bind(&tgame_load::compare_date_rev, this, _1, _2);
+	order_funcs[0] = std::bind(&tgame_load::compare_date, this, _1, _2);
+	order_funcs[1] = std::bind(&tgame_load::compare_date_rev, this, _1, _2);
 	list.set_column_order(1, order_funcs);
 }
 
@@ -201,7 +200,7 @@ void tgame_load::list_item_clicked(twindow& window)
 	display_savegame(window);
 }
 
-bool tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
+void tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
 {
 	twindow& window = *textbox->get_window();
 
@@ -210,7 +209,7 @@ bool tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
 	const std::vector<std::string> words = utils::split(text, ' ');
 
 	if(words == last_words_)
-		return false;
+		return;
 	last_words_ = words;
 
 	std::vector<bool> show_items(list.get_item_count(), true);
@@ -224,7 +223,7 @@ bool tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
 					= find_widget<tlabel>(*it, "filename", false);
 
 			bool found = false;
-			FOREACH(const AUTO & word, words)
+			for(const auto & word : words)
 			{
 				found = std::search(filename_label.label().str().begin(),
 									filename_label.label().str().end(),
@@ -244,8 +243,6 @@ bool tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
 	}
 
 	list.set_row_shown(show_items);
-
-	return false;
 }
 
 void tgame_load::post_show(twindow& window)
@@ -330,7 +327,7 @@ void tgame_load::evaluate_summary_string(std::stringstream& str,
 			switch(ct.v) {
 				case game_classification::CAMPAIGN_TYPE::SCENARIO: {
 					const std::string campaign_id = cfg_summary["campaign"];
-					const config* campaign = NULL;
+					const config* campaign = nullptr;
 					if(!campaign_id.empty()) {
 						if(const config& c = cache_config_.find_child(
 								   "campaign", "id", campaign_id)) {
@@ -339,7 +336,7 @@ void tgame_load::evaluate_summary_string(std::stringstream& str,
 						}
 					}
 					utils::string_map symbols;
-					if(campaign != NULL) {
+					if(campaign != nullptr) {
 						symbols["campaign_name"] = (*campaign)["name"];
 					} else {
 						// Fallback to nontranslatable campaign id.
@@ -348,7 +345,7 @@ void tgame_load::evaluate_summary_string(std::stringstream& str,
 					str << vgettext("Campaign: $campaign_name", symbols);
 
 					// Display internal id for debug purposes if we didn't above
-					if(game_config::debug && (campaign != NULL)) {
+					if(game_config::debug && (campaign != nullptr)) {
 						str << '\n' << "(" << campaign_id << ")";
 					}
 					break;

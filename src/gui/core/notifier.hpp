@@ -16,7 +16,6 @@
 #define GUI_WIDGETS_AUXILIARY_NOTIFIER_HPP_INCLUDED
 
 #include "gui/core/notifiee.hpp"
-#include "utils/foreach.hpp"
 
 #include <cassert>
 #include <map>
@@ -43,12 +42,12 @@ public:
 
 	~tnotifier()
 	{
-		FOREACH(AUTO & item, notifiees_)
+		for (auto & item : notifiees_)
 		{
 			assert(item.first);
 			assert((*item.first).notifier_ == this);
 
-			(*item.first).notifier_ = NULL;
+			(*item.first).notifier_ = nullptr;
 		}
 	}
 
@@ -84,7 +83,7 @@ public:
 
 			assert(notifiee.notifier_ == this);
 
-			notifiee.notifier_ = NULL;
+			notifiee.notifier_ = nullptr;
 
 			notifiees_.erase(itor);
 		}

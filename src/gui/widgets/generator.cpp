@@ -17,7 +17,6 @@
 #include "gui/widgets/generator_private.hpp"
 
 #include "gui/widgets/window.hpp"
-#include "utils/foreach.hpp"
 #include "wml_exception.hpp"
 
 namespace gui2
@@ -228,7 +227,7 @@ twidget* thorizontal_list::find_at(const tpoint& coordinate,
 			return widget;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const twidget* thorizontal_list::find_at(const tpoint& coordinate,
@@ -251,7 +250,7 @@ const twidget* thorizontal_list::find_at(const tpoint& coordinate,
 			return widget;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void thorizontal_list::handle_key_left_arrow(SDLMod /*modifier*/, bool& handled)
@@ -428,7 +427,7 @@ twidget* tvertical_list::find_at(const tpoint& coordinate,
 			return widget;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const twidget* tvertical_list::find_at(const tpoint& coordinate,
@@ -451,7 +450,7 @@ const twidget* tvertical_list::find_at(const tpoint& coordinate,
 			return widget;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void tvertical_list::handle_key_up_arrow(SDLMod /*modifier*/, bool& handled)
@@ -577,7 +576,7 @@ twidget* tindependent::find_at(const tpoint& coordinate,
 
 	const int selected_item = get_selected_item();
 	if(selected_item < 0) {
-		return NULL;
+		return nullptr;
 	}
 
 	tgrid& grid = item(selected_item);
@@ -591,7 +590,7 @@ const twidget* tindependent::find_at(const tpoint& coordinate,
 
 	const int selected_item = get_selected_item();
 	if(selected_item < 0) {
-		return NULL;
+		return nullptr;
 	}
 
 	const tgrid& grid = item(selected_item);
@@ -607,7 +606,7 @@ twidget* tindependent::find(const std::string& id, const bool must_be_active)
 			}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const twidget* tindependent::find(const std::string& id,
@@ -621,7 +620,7 @@ const twidget* tindependent::find(const std::string& id,
 			}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void tindependent::set_visible_rectangle(const SDL_Rect& rectangle)
@@ -657,7 +656,7 @@ void tselect::select(tgrid& grid, const bool select)
 void
 tselect::init(tgrid* grid,
 			  const std::map<std::string /* widget id */, string_map>& data,
-			  const boost::function<void(twidget&)>& callback)
+			  const std::function<void(twidget&)>& callback)
 {
 	for(unsigned row = 0; row < grid->get_rows(); ++row) {
 		for(unsigned col = 0; col < grid->get_cols(); ++col) {
@@ -695,11 +694,11 @@ tselect::init(tgrid* grid,
 
 void tshow::init(tgrid* grid,
 				 const std::map<std::string /* widget id */, string_map>& data,
-				 const boost::function<void(twidget&)>& callback)
+				 const std::function<void(twidget&)>& callback)
 {
 	assert(!callback);
 
-	FOREACH(const AUTO & item, data)
+	for(const auto & item : data)
 	{
 		if(item.first.empty()) {
 			for(unsigned row = 0; row < grid->get_rows(); ++row) {
@@ -805,7 +804,7 @@ tgenerator_* tgenerator_::build(const bool has_minimum,
 								const tplacement placement,
 								const bool select)
 {
-	tgenerator_* result = NULL;
+	tgenerator_* result = nullptr;
 	GENERATE_BODY;
 	return result;
 }

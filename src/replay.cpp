@@ -41,7 +41,6 @@
 #include "whiteboard/manager.hpp"
 #include "replay_recorder_base.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <set>
 #include <map>
@@ -71,7 +70,7 @@ static void verify(const unit_map& units, const config& cfg) {
 			   << nunits << " according to data source. " << units.size() << " locally\n";
 
 		std::set<map_location> locs;
-		BOOST_FOREACH(const config &u, cfg.child_range("unit"))
+		for (const config &u : cfg.child_range("unit"))
 		{
 			const map_location loc(u);
 			locs.insert(loc);
@@ -92,7 +91,7 @@ static void verify(const unit_map& units, const config& cfg) {
 		errbuf.clear();
 	}
 
-	BOOST_FOREACH(const config &un, cfg.child_range("unit"))
+	for (const config &un : cfg.child_range("unit"))
 	{
 		const map_location loc(un);
 		const unit_map::const_iterator u = units.find(loc);
@@ -139,7 +138,7 @@ static time_t get_time(const config &speak)
 	else
 	{
 		//fallback in case sender uses wesnoth that doesn't send timestamps
-		time = ::time(NULL);
+		time = ::time(nullptr);
 	}
 	return time;
 }
@@ -154,7 +153,7 @@ chat_msg::chat_msg(const config &cfg)
 	{
 		nick_ = cfg["id"].str();
 	} else {
-		nick_ = str_cast("*")+cfg["id"].str()+"*";
+		nick_ = "*"+cfg["id"].str()+"*";
 	}
 	int side = cfg["side"].to_int(0);
 	LOG_REPLAY << "side in message: " << side << std::endl;
@@ -411,7 +410,7 @@ config replay::get_data_range(int cmd_start, int cmd_end, DATA_TYPE data_type)
 void replay::redo(const config& cfg)
 {
 	assert(base_->get_pos() == ncommands());
-	BOOST_FOREACH(const config &cmd, cfg.child_range("command"))
+	for (const config &cmd : cfg.child_range("command"))
 	{
 		base_->add_child() = cmd;
 	}
@@ -599,7 +598,7 @@ void replay::revert_action()
 config* replay::get_next_action()
 {
 	if (at_end())
-		return NULL;
+		return nullptr;
 
 	LOG_REPLAY << "up to replay action " << base_->get_pos() + 1 << '/' << ncommands() << '\n';
 
@@ -627,7 +626,7 @@ bool replay::empty()
 
 void replay::add_config(const config& cfg, MARK_SENT mark)
 {
-	BOOST_FOREACH(const config &cmd, cfg.child_range("command"))
+	for (const config &cmd : cfg.child_range("command"))
 	{
 		config &cfg = base_->insert_command(base_->size());
 		cfg = cmd;
@@ -688,7 +687,7 @@ REPLAY_RETURN do_replay_handle(bool one_move)
 
 		DBG_REPLAY << "in do replay with is_synced=" << is_synced << "\n";
 
-		if (cfg != NULL)
+		if (cfg != nullptr)
 		{
 			DBG_REPLAY << "Replay data:\n" << *cfg << "\n";
 		}

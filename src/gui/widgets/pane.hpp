@@ -19,7 +19,7 @@
 #include "gui/core/window_builder.hpp"
 #include "gui/core/placer.hpp"
 
-#include "utils/boost_function_guarded.hpp"
+#include "utils/functional.hpp"
 
 #include <list>
 
@@ -51,9 +51,9 @@ public:
 		tgrid* grid;
 	};
 
-	typedef boost::function<bool(const titem&, const titem&)> tcompare_functor;
+	typedef std::function<bool(const titem&, const titem&)> tcompare_functor;
 
-	typedef boost::function<bool(const titem&)> tfilter_functor;
+	typedef std::function<bool(const titem&)> tfilter_functor;
 
 	/** @deprecated Use the second overload. */
 	explicit tpane(const tbuilder_grid_ptr item_builder);
@@ -71,31 +71,31 @@ public:
 						 const std::map<std::string, std::string>& tags);
 
 	/** See @ref twidget::place. */
-	virtual void place(const tpoint& origin, const tpoint& size) OVERRIDE;
+	virtual void place(const tpoint& origin, const tpoint& size) override;
 
 	/** See @ref twidget::layout_initialise. */
-	virtual void layout_initialise(const bool full_initialisation) OVERRIDE;
+	virtual void layout_initialise(const bool full_initialisation) override;
 
 	/** See @ref twidget::impl_draw_children. */
 	virtual void impl_draw_children(surface& frame_buffer,
 									int x_offset,
-									int y_offset) OVERRIDE;
+									int y_offset) override;
 
 	/** See @ref twidget::child_populate_dirty_list. */
 	virtual void
 	child_populate_dirty_list(twindow& caller,
-							  const std::vector<twidget*>& call_stack) OVERRIDE;
+							  const std::vector<twidget*>& call_stack) override;
 
 	/** See @ref twidget::request_reduce_width. */
-	virtual void request_reduce_width(const unsigned maximum_width) OVERRIDE;
+	virtual void request_reduce_width(const unsigned maximum_width) override;
 
 	/** See @ref twidget::find_at. */
 	virtual twidget* find_at(const tpoint& coordinate,
-							 const bool must_be_active) OVERRIDE;
+							 const bool must_be_active) override;
 
 	/** See @ref twidget::find_at. */
 	virtual const twidget* find_at(const tpoint& coordinate,
-								   const bool must_be_active) const OVERRIDE;
+								   const bool must_be_active) const override;
 
 	/**
 	 * Sorts the contents of the pane.
@@ -117,14 +117,14 @@ public:
 
 private:
 	/** See @ref twidget::calculate_best_size. */
-	virtual tpoint calculate_best_size() const OVERRIDE;
+	virtual tpoint calculate_best_size() const override;
 
 public:
 	/** See @ref twidget::disable_click_dismiss. */
-	bool disable_click_dismiss() const OVERRIDE;
+	bool disable_click_dismiss() const override;
 
 	/** See @ref twidget::create_walker. */
-	virtual iterator::twalker_* create_walker() OVERRIDE;
+	virtual iterator::twalker_* create_walker() override;
 
 	/**
 	 * Returns a grid in the pane.
@@ -134,7 +134,7 @@ public:
 	 *                            @ref create_item().
 	 *
 	 * @returns                   The wanted grid.
-	 * @retval NULL               The id isn't associated with an item.
+	 * @retval nullptr               The id isn't associated with an item.
 	 */
 	tgrid* grid(const unsigned id);
 
@@ -146,7 +146,7 @@ public:
 	 *                            @ref create_item().
 	 *
 	 * @returns                   The wanted grid.
-	 * @retval NULL               The id isn't associated with an item.
+	 * @retval nullptr               The id isn't associated with an item.
 	 */
 	const tgrid* grid(const unsigned id) const;
 
@@ -161,7 +161,7 @@ private:
 	unsigned item_id_generator_;
 
 	/** Helper to do the placement. */
-	std::auto_ptr<tplacer_> placer_;
+	std::unique_ptr<tplacer_> placer_;
 
 	/** Places the children on the pane. */
 	void place_children();
