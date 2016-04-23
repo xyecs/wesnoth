@@ -484,8 +484,6 @@ public:
 
 	terrain_builder& get_builder() {return *builder_;}
 
-	void flip();
-
 	/** Copy the backbuffer to the framebuffer. */
 	void update_display();
 

@@ -1399,13 +1399,6 @@ void display::toggle_debug_foreground()
 	debug_foreground = !debug_foreground;
 }
 
-void display::flip()
-{
-
-	video().flip();
-
-}
-
 void display::post_draw() {
 	if(video().faked()) {
 			return;
@@ -1465,10 +1458,8 @@ void display::update_display()
 	} else if(fps_handle_ != 0) {
 		clear_fps_label();
 	}
-
-	flip();
-
 }
+
 #ifdef SDL_GPU
 static void draw_panel(surface &target, const theme::panel& panel, std::vector<gui::button>& /*buttons*/)
 #else
