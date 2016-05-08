@@ -13,6 +13,8 @@
    See the COPYING file for more details.
 */
 
+#include <gui/core/event/handler.hpp>
+#include <gui/dialogs/loadscreen.hpp>
 #include "controller_base.hpp"
 
 #include "dialogs.hpp"
@@ -31,7 +33,7 @@ static lg::log_domain log_display("display");
 
 controller_base::controller_base(
 		const config& game_config, CVideo& /*video*/)
-	: draw_layering(false)
+	: draw_layering()
 	, game_config_(game_config)
 	, key_()
 	, scrolling_(false)
@@ -49,7 +51,7 @@ controller_base::~controller_base()
 
 void controller_base::handle_event(const SDL_Event& event)
 {
-	if(gui::in_dialog()) {
+	if(gui::in_dialog() || gui2::is_in_dialog() || gui2::tloadscreen::displaying()) {
 		return;
 	}
 	static const hotkey::hotkey_command& quit_hotkey = hotkey::hotkey_command::get_command_by_command(hotkey::HOTKEY_QUIT_GAME);
@@ -211,7 +213,6 @@ void controller_base::play_slice(bool is_delay_enabled)
 
 	events::pump();
 	events::raise_process_event();
-	//events::raise_draw_event();
 
 	// Update sound sources before scrolling
 	if (soundsource::manager *l = get_soundsource_man()) {
@@ -240,7 +241,7 @@ void controller_base::play_slice(bool is_delay_enabled)
 	const double joysticky = values.second;
 
 	int mousex, mousey;
-	Uint8 mouse_flags = SDL_GetMouseState(&mousex, &mousey);
+	Uint32 mouse_flags = SDL_GetMouseState(&mousex, &mousey);
 
 	/* TODO fendrin enable after an axis choosing mechanism is implemented
 	std::pair<double, double> values = joystick_manager_.get_mouse_axis_pair();
