@@ -234,10 +234,8 @@ inline std::size_t bit_width() {
  * @returns the size, in bits, of an instance of type `T`.
  */
 template<typename T>
-inline std::size_t bit_width(const T& x) {
-	//msvc 2010 gives an unused parameter warning otherwise
-	(void)x;
-	return sizeof(x) * std::numeric_limits<unsigned char>::digits;
+inline std::size_t bit_width(const T&) {
+	return sizeof(T) * std::numeric_limits<unsigned char>::digits;
 }
 
 /**
@@ -496,8 +494,7 @@ inline bool contains(const Container & container, const Value & value)
 
 
 #if 1
-# include <SDL_types.h>
-typedef Sint32 fixed_t;
+typedef int32_t fixed_t;
 # define fxp_shift 8
 # define fxp_base (1 << fxp_shift)
 

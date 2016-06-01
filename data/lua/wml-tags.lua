@@ -646,7 +646,7 @@ function wml_actions.transform_unit(cfg)
 			local status = helper.get_child( unit.__cfg, "status" )
 
 			unit.experience = unit.max_experience
-			wml_actions.advance_unit(unit, false, false)
+			wesnoth.advance_unit(unit, false, false)
 
 			unit.hitpoints = hitpoints
 			unit.experience = experience
@@ -1001,7 +1001,7 @@ wml_actions.teleport = function(cfg)
 		-- No error if no unit matches.
 		return
 	end
-	wesnoth.teleport(unit, cfg.check_passability == false, cfg.clear_shroud ~= false, cfg.animate)
+	wesnoth.teleport(unit, cfg.x, cfg.y, cfg.check_passability == false, cfg.clear_shroud ~= false, cfg.animate)
 end
 
 function wml_actions.remove_sound_source(cfg)
@@ -1013,6 +1013,7 @@ function wml_actions.sound_source(cfg)
 end
 
 function wml_actions.deprecated_message(cfg)
+	if not wesnoth.game_config.debug then return end
 	wesnoth.log('wml', cfg.message)
 end
 
@@ -1023,7 +1024,7 @@ end
 
 local function parse_fog_cfg(cfg)
 	-- Side filter
-	local ssf = helper.child(cfg, "filter_side")
+	local ssf = helper.get_child(cfg, "filter_side")
 	local sides = wesnoth.get_sides(ssf or {})
 	-- Location filter
 	local locs = wesnoth.get_locations(cfg)
@@ -1032,10 +1033,14 @@ end
 
 function wml_actions.lift_fog(cfg)
 	local locs, sides = parse_fog_cfg(cfg)
-	wesnoth.remove_fog(sides, locs, not cfg.multiturn)
+	for i = 1, #sides do
+		wesnoth.remove_fog(sides[i].side, locs, not cfg.multiturn)
+	end
 end
 
 function wml_actions.reset_fog(cfg)
 	local locs, sides = parse_fog_cfg(cfg)
-	wesnoth.add_fog(sides, locs, cfg.reset_view)
+	for i = 1, #sides do
+		wesnoth.add_fog(sides[i].side, locs, cfg.reset_view)
+	end
 end

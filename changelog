@@ -1,8 +1,15 @@
 Version 1.13.4+dev:
+ * Campaigns:
+   * Heir to the Throne:
+     * New sprites for Li'sar.
+     * S10: Clarify objectives and change egg image on capture.
+     * S19c: Removed the undead and the swamps.
  * Graphics:
    * Updated generic portrait of Mermaid Initiate.
+   * Added generic portrait for Giant Spider.
  * Language and i18n:
-   * Updated translations:
+   * Updated translations: British English, Galician, German, Italian, Japanese,
+     Portuguese, RACV, Russian, Scottish Gaelic, Spanish
  * Removed support for SDL 1.2. SDL 2 is now the only supported version.
  * Terrains:
    * Changed terrain code of Desert Mountains from Mdy to Mdd.
@@ -10,6 +17,12 @@ Version 1.13.4+dev:
    * Various design improvements to GUI2 widgets
    * New simpler GUI2 loading screen
    * New colored cursor graphics
+   * Fixed Observers icon appearing behind other top bar items in MP games on
+     horizontal UI resolutions < 1024 (bug #24455).
+   * Fixed ToD schedule progress indicator appearing behind other top bar items
+     on vertical UI resolutions < 600.
+   * Improved the dialog for choosing what to do when a player leaves in
+     multiplayer.
  * WML engine:
    * Fix some issues with [foreach]
    * Fix some issues with backstab-like weapon specials
@@ -37,6 +50,8 @@ Version 1.13.4+dev:
    * Added new keys name_generator, male_name_generator and female_name_generator
      for the [race] tag to declare a context-free grammar to describe how names
      are derived
+   * Modification tags in [modify_unit] now support delayed_variable_substitution
+     (This means [advancement], [object], and [trait] tags.)
    * AiWML:
      * Simplified aspect syntax which works for all aspects, present and future:
        * All aspects with simple values can be specified as key=value
@@ -158,10 +173,12 @@ Version 1.13.4+dev:
      * abilities - list of the IDs of all abilities
    * Additional fields in table returned by wesnoth.get_terrain_info:
      * icon, editor_image, light
-   * Additional fields in unit type proxu:
+   * Additional fields in unit type proxy:
      * race, id, alignment
      * attacks, which returns the same thing as unit.attacks
      * abilities, same as unit.abilities
+   * Additional field in side proxy:
+     * faction (read-only), faction_name (read-only)
    * LuaAI:
      * The table returned by check_*() now has a "result" field which
        gives a description of the action's result; similar to "status"
@@ -193,6 +210,8 @@ Version 1.13.4+dev:
        should return a table with keys "own" and "enemy", each of which may
        be either a unit filter table or a function which takes a unit as a
        parameter and returns true or false.
+ * Multiplayer:
+   * Hornshark Island: simplified multiplayer faction determination
  * Wesnoth formula engine:
    * Formulas in unit filters can now access nearly all unit attributes
      The following attributes were renamed (old names still work, for now):
@@ -290,6 +309,13 @@ Version 1.13.4+dev:
    * Recognize hotkey release events
    * Allow changing keybindings for scrolling the map.
    * Fix the move-to-targets candidate action of the default AI ignoring tunnels
+   * Fix two rare bugs in the goto candidate action that resulted in goto moves
+     by other units being skipped after a unit could not get to its goal.
+   * Replace wmlxgettext tool with new python3 implementation by Nobun:
+     https://github.com/AncientLich/wmlxgettext-unoff/
+   * Debug commands that create units now do so for the currently controlled
+     side instead of always side 1.
+   * Fixed bug #24696 (Nightstalk ability not working)
 
 Version 1.13.4:
  * Language and i18n:

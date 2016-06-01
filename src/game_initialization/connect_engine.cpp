@@ -980,7 +980,11 @@ config side_engine::new_config() const
 
 	// Save default "recruit" so that correct faction lists would be
 	// initialized by flg_manager when the new side config is sent over network.
+	// In case recruit list was empty, set a flag to indicate that.
 	res["default_recruit"] = cfg_["recruit"].str();
+	if (res["default_recruit"].empty()) {
+		res["no_recruit"] = true;
+	}
 
 	// If the user is allowed to change type, faction, leader etc,
 	// then import their new values in the config.
@@ -988,6 +992,7 @@ config side_engine::new_config() const
 		// Merge the faction data to res.
 		config faction = flg_.current_faction();
 		res["faction_name"] = faction["name"];
+		res["faction"] = faction["id"];
 		faction.remove_attributes("id", "name", "image", "gender", "type");
 		res.append(faction);
 	}

@@ -1,72 +1,51 @@
 # translation of it.po to Italian
-# Antonio Rosella <arosella@yahoo.com>, 2010-2014
+# Antonio Rosella <arosella@yahoo.com>, 2010-2016
 msgid ""
 msgstr ""
 "Project-Id-Version: wescamp-i 18n\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2016-01-16 20:58-0300\n"
-"PO-Revision-Date: 2014-02-25 23:41-0000\n"
-"Last-Translator: Antonio 'Antro' Rosella <arosella@yahoo.com>\n"
+"POT-Creation-Date: 2016-04-30 17:00 UTC\n"
+"PO-Revision-Date: 2016-05-11 17:25+0000\n"
+"Last-Translator: Antonio \"Antro\" Rosella <arosella@yahoo.com>\n"
 "Language-Team: none\n"
-"Language: \n"
+"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.8.7.1\n"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:10 data/campaigns/Liberty/_main.cfg:11
 msgid "Liberty"
 msgstr "Libertà"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:18
-#, fuzzy
-#| msgid "(Easy)"
 msgid "Easy"
-msgstr "(Facile)"
+msgstr "Facile"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:18
 msgid "Peasant"
 msgstr "Contadino"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:19
-#, fuzzy
-#| msgid "(Normal)"
 msgid "Normal"
-msgstr "(Normale)"
+msgstr "Normale"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:19
 msgid "Outlaw"
 msgstr "Fuorilegge"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:20
-#, fuzzy
-#| msgid "(Difficult)"
 msgid "Difficult"
-msgstr "(Difficile)"
+msgstr "Difficile"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:20
 msgid "Fugitive"
 msgstr "Fuggitivo"
@@ -90,8 +69,6 @@ msgstr ""
 "\n"
 
 #. [campaign]: id=Liberty
-#. Yes, that is "marchlanders", not "marshlanders".
-#. "marchlander" is archaic English for an inhabitant of a border region.
 #: data/campaigns/Liberty/_main.cfg:27
 msgid "(Intermediate level, 8 scenarios.)"
 msgstr "(Livello intermedio, 9 scenari)"
@@ -503,14 +480,14 @@ msgstr ""
 msgid "Civil Disobedience"
 msgstr "Disobbedienza civile"
 
+#. [side]: type=Bandit_Peasant, id=Baldras
 #. [side]
 #. [side]: type=Bandit, id=Baldras
-#. [side]: type=Bandit_Peasant, id=Baldras
 #. [side]: type=General, id=Lord Maddock
-#. [side]: type=Highwayman, id=Baldras
-#. [side]: type=Highwayman_Peasant, id=Relana
 #. [side]: type=Rogue, id=Hans
 #. [side]: type=Shadow Lord, id=Helicrom
+#. [side]: type=Highwayman, id=Baldras
+#. [side]: type=Highwayman_Peasant, id=Relana
 #: data/campaigns/Liberty/scenarios/02_Civil_Disobedience.cfg:26
 #: data/campaigns/Liberty/scenarios/02_Civil_Disobedience.cfg:61
 #: data/campaigns/Liberty/scenarios/03_A_Strategy_Of_Hope.cfg:27
@@ -533,13 +510,13 @@ msgstr "Ribelli"
 msgid "Tarwen"
 msgstr "Tarwen"
 
-#. [side]
 #. [side]: type=Cavalier, id=Tarwen
-#. [side]: type=General, id=Dommel
 #. [side]: type=General, id=Kestrel
-#. [side]: type=Iron Mauler, id=Linneus
 #. [side]: type=Master Bowman, id=Quentin
+#. [side]
 #. [side]: type=Royal Guard, id=Archarel
+#. [side]: type=Iron Mauler, id=Linneus
+#. [side]: type=General, id=Dommel
 #: data/campaigns/Liberty/scenarios/02_Civil_Disobedience.cfg:40
 #: data/campaigns/Liberty/scenarios/04_Unlawful_Orders.cfg:80
 #: data/campaigns/Liberty/scenarios/05_Hide_and_Seek.cfg:50
@@ -698,9 +675,9 @@ msgstr "Relana"
 msgid "Urk Delek"
 msgstr "Urk Delek"
 
-#. [side]: type=Lich, id=Sel-Mana
 #. [side]: type=Necromancer, id=Mal-Jarrof
 #. [side]: type=Necromancer, id=Mal-Jerod
+#. [side]: type=Lich, id=Sel-Mana
 #. [side]: type=Orcish Warrior, id=Urk Delek
 #. [side]: type=Saurian Oracle, id=Thhsthss
 #: data/campaigns/Liberty/scenarios/03_A_Strategy_Of_Hope.cfg:89
@@ -893,19 +870,13 @@ msgstr ""
 
 #. [message]: speaker=narrator
 #: data/campaigns/Liberty/scenarios/03_A_Strategy_Of_Hope.cfg:275
-#, fuzzy
-#| msgid ""
-#| "Baldras and Relana returned to their villages to find them destroyed, "
-#| "with those who fought left dead and the few survivors born away to "
-#| "unguessable fates. It was a bitter doom, and as Wesnoth descended into "
-#| "darkness they would live to see worse."
 msgid ""
 "Baldras and Relana returned to their villages to find them destroyed, with "
 "those who fought left dead and the few survivors borne away to unknown "
 "fates. It was a bitter doom, and as Wesnoth descended into darkness they "
 "would live to see worse."
 msgstr ""
-"Baldras e Relnan tornarono ai loro villaggi solo per ritrovarli distrutti, "
+"Baldras e Relana tornarono ai loro villaggi solo per ritrovarli distrutti, "
 "con coloro che avevano combattuto per difenderli morti e i pochi "
 "sopravvissuti deportati verso un fato imperscrutabile. Era un amaro destino, "
 "e mentre Wesnoth piombava nell’oscurità loro sarebbero sopravvissuti per "
@@ -1589,7 +1560,7 @@ msgstr ""
 msgid "I leave it to you to decide."
 msgstr "Lascio a te la decisione."
 
-#. [option]: speaker=Helicrom
+#. [option]
 #: data/campaigns/Liberty/scenarios/06_The_Grey_Woods.cfg:350
 msgid "I will take the gold. How does 500 sound?"
 msgstr "Prendo l’oro. Che te ne pare di 500 pezzi?"
@@ -1599,7 +1570,7 @@ msgstr "Prendo l’oro. Che te ne pare di 500 pezzi?"
 msgid "Agreed. Good luck and farewell to you, Master Baldras."
 msgstr "D’accordo. Buona fortuna e buon viaggio, Mastro Baldras."
 
-#. [option]: speaker=Helicrom
+#. [option]
 #: data/campaigns/Liberty/scenarios/06_The_Grey_Woods.cfg:375
 msgid ""
 "Send your men with us. They will be valuable help as we prepare for the "
@@ -1615,7 +1586,7 @@ msgstr ""
 "Fatto. I miei maghi e i miei ladri più abili sono a tua disposizione. "
 "Impiegali al meglio."
 
-#. [option]: speaker=Helicrom
+#. [option]
 #: data/campaigns/Liberty/scenarios/06_The_Grey_Woods.cfg:394
 msgid "I wish you to join us in battle against the Queen’s forces."
 msgstr ""
@@ -1751,7 +1722,7 @@ msgstr ""
 "di Wesnoth; non avrei mai immaginato che sarebbero diventate il rifugio dei "
 "suoi nemici."
 
-#. [event]: id=Pitcher 20 14}, id=Pitcher 28 18}, id=Pitcher 20 14}
+#. [event]
 #: data/campaigns/Liberty/scenarios/07_The_Hunters.cfg:155
 msgid "Pitcher"
 msgstr "Pitcher"
@@ -2078,8 +2049,8 @@ msgstr ""
 "Quindi... possiamo distruggere i supporti e abbattere la fortezza di "
 "Halstead. Funzionerà veramente?"
 
-#. [message]: speaker=Baldras
 #. [message]: speaker=Helicrom
+#. [message]: speaker=Baldras
 #: data/campaigns/Liberty/scenarios/08_Glory.cfg:483
 #: data/campaigns/Liberty/scenarios/08_Glory.cfg:509
 msgid ""
@@ -2900,12 +2871,6 @@ msgstr "Come è potuto succedere? Siamo perduti."
 
 #. [message]: speaker=narrator
 #: data/campaigns/Liberty/utils/utils.cfg:164
-#, fuzzy
-#| msgid ""
-#| "They returned to their village to find it destroyed, with those who "
-#| "fought left dead and the few survivors borne away to unguessable fates. "
-#| "It was a bitter doom, but as Asheviere’s grip tightened they would live "
-#| "to see worse."
 msgid ""
 "They returned to their village to find it destroyed, with those who fought "
 "left dead and the few survivors borne away to unknown fates. It was a bitter "
@@ -2914,188 +2879,4 @@ msgstr ""
 "Tornarono ai loro villaggi solo per ritrovarli distrutti, con quelli che "
 "avevano combattuto morti e i pochi sopravvissuti deportati verso un fato "
 "imperscrutabile. Era un amaro destino, ma mentre la presa di Asheviere si "
-"stringeva essi sarebbero sopravvissuti per vedere il peggio."
-
-#~ msgid "Relnan"
-#~ msgstr "Relnan"
-
-#~ msgid "magic missile"
-#~ msgstr "dardo incantato"
-
-#~ msgid "Turns run out"
-#~ msgstr "Fine dei turni"
-
-#~ msgid "(Baldras!)"
-#~ msgstr "(Baldras!)"
-
-#~ msgid "Translators"
-#~ msgstr "Traduttori"
-
-#~ msgid ""
-#~ "Goblins do not do well without their leaders. If we can kill this one, it "
-#~ "may take the fight out of the rest."
-#~ msgstr ""
-#~ "I goblin non sanno coordinarsi senza un comandante. Se riusciamo ad "
-#~ "abbatterlo, potremo fermarli."
-
-#~ msgid ""
-#~ "Each village has a group of highly capable fighters dedicated to fending "
-#~ "off orc raids. Some of these join the Wesnoth army, while others join the "
-#~ "core of the village’s patrol."
-#~ msgstr ""
-#~ "Ogni villaggio ha un gruppo di combattenti molto abili molto validi "
-#~ "incaricati di respingere le incursioni degli orchi. Alcuni di loro si "
-#~ "arruolano nell’esercito di Wesnoth, mentre altri entrano a far parte "
-#~ "delle pattuglie notturne del villaggio."
-
-#~ msgid "Amman"
-#~ msgstr "Amman"
-
-#~ msgid "Porus"
-#~ msgstr "Porus"
-
-#~ msgid "Wait - I hear something..."
-#~ msgstr "Aspetta – sento qualcosa..."
-
-#~ msgid ""
-#~ "I’m glad we finally get to spend some time near a city. I was sick of "
-#~ "marching through swamps and woods chasing down locals. If this terrorist "
-#~ "shows up at Carcyn I’ll put his head at the end of my pole."
-#~ msgstr ""
-#~ "Sono contento che finalmente passiamo un po’ di tempo vicino a una città. "
-#~ "Ero stufo di marciare per paludi e boschi dando la caccia agli abitanti "
-#~ "dei luoghi. Se questo terrorista si fa vedere a Carcyn, appenderò la sua "
-#~ "testa in punta alla mia lancia."
-
-#~ msgid ""
-#~ "If we let him into the city, the commander will put our heads on poles... "
-#~ "damn moonless night! Did you hear something?"
-#~ msgstr ""
-#~ "Se lo lasciassimo entrare in città, il comandante appenderà le nostre "
-#~ "teste sui pali... dannata notte senza luna! Hai sentito anche tu qualcosa?"
-
-#~ msgid "Umm, I don’t know. It is pitch black out there..."
-#~ msgstr "Uhm, non so. È buio pesto qua fuori..."
-
-#~ msgid "I don’t see anything. Let’s keep going."
-#~ msgstr "Non vedo nulla, procediamo."
-
-#~ msgid ""
-#~ "I think we need to find a way to sneak past these patrols. We would be "
-#~ "slaughtered if we tried to fight them."
-#~ msgstr ""
-#~ "Dobbiamo trovare un modo per scivolare alle spalle di queste pattuglie. "
-#~ "Se provassimo a combatterle ci massacrerebbero."
-
-#~ msgid "Let’s go around then."
-#~ msgstr "Aggiriamoli allora."
-
-#~ msgid "Who is that?"
-#~ msgstr "Chi è là?"
-
-#~ msgid "Well, good thing I found you first. Now hurry."
-#~ msgstr "Beh, meno male che vi ho trovato prima io. Adesso muoviamoci."
-
-#~ msgid "No, THEY found us first! Let’s go!"
-#~ msgstr "No, ci hanno trovato LORO per primi! Andiamo!"
-
-#~ msgid "Shhhhh!! I could hear you coming from bottom of the city dungeon."
-#~ msgstr ""
-#~ "Shhhhh!! Potevo sentirvi arrivare dai livello inferiore delle segrete "
-#~ "della città."
-
-#~ msgid "I can barely see where we are going. Is the city near?"
-#~ msgstr "Riesco a malapena a vedere dove metto i piedi. La città è vicina?"
-
-#~ msgid ""
-#~ "Yes, just south of here. You should avoid the main gate. The west gate is "
-#~ "heavily traveled but is less guarded than the east gate. Try to sneak in "
-#~ "that way."
-#~ msgstr ""
-#~ "Sì, proprio verso sud. Dovreste evitare il cancello principale. Il "
-#~ "cancello occidentale è molto trafficato ma ci sono meno guardie che a "
-#~ "quello orientale. Provate a intrufolarvi da quello."
-
-#~ msgid ""
-#~ "Unfortunately, they know we are here already. We can only hope that the "
-#~ "cover of night will be adequate despite their stepped-up efforts to find "
-#~ "us."
-#~ msgstr ""
-#~ "Purtroppo sanno già che siamo qua. Possiamo solo sperare che la notte ci "
-#~ "nasconda nonostante abbiano intensificato gli sforzi per trovarci."
-
-#~ msgid "Hello, our leader is on the other side of the city."
-#~ msgstr "Salve, il nostro capo è dall’altra parte della città."
-
-#~ msgid ""
-#~ "We already tangled with some guards. The city is probably swarming with "
-#~ "soldiers by now. We cannot go that way. "
-#~ msgstr ""
-#~ "Siamo già incappati in alcune guardie. Adesso la città pullulerà di "
-#~ "soldati. Non possiamo passare di qua."
-
-#~ msgid "We have to go through the city? Impossible!"
-#~ msgstr "Dobbiamo attraversare la città? Impossibile!"
-
-#~ msgid "Elense Vanguard Rider"
-#~ msgstr "Razziatori dell’avanguardia degli Elense"
-
-#~ msgid "Dusk"
-#~ msgstr "Crepuscolo"
-
-#, fuzzy
-#~ msgid ""
-#~ "Look there... the canyon valley lies in perpetual darkness... a sign of "
-#~ "true evil."
-#~ msgstr ""
-#~ "Guardate... il canalone è immerso in un’oscurità perpetua... sicuro segno "
-#~ "di malvagità."
-
-#~ msgid ""
-#~ "There are some bones here.  There appears to be something among them."
-#~ msgstr "Ci sono delle ossa qua. Sembra che ci sia qualcosa tra di esse."
-
-#~ msgid "leadership"
-#~ msgstr "comando"
-
-#~ msgid "blade"
-#~ msgstr "lama"
-
-#, fuzzy
-#~ msgid "fire"
-#~ msgstr "perfora"
-
-#~ msgid "marksman"
-#~ msgstr "tiro di precisione"
-
-#~ msgid "impact"
-#~ msgstr "impatto"
-
-#, fuzzy
-#~ msgid "magic-missile"
-#~ msgstr "missile"
-
-#~ msgid "cold"
-#~ msgstr "freddo"
-
-#~ msgid "Night Patrolman"
-#~ msgstr "Ronda notturna"
-
-#, fuzzy
-#~ msgid "female^Night Patroller"
-#~ msgstr "Ronda notturna"
-
-#~ msgid "club"
-#~ msgstr "randello"
-
-#, fuzzy
-#~ msgid ""
-#~ "I agree.  However, I must stay here and prepare to defend Delwyn and "
-#~ "Dallben so it's up to you to travel to Elensefar and talk to him."
-#~ msgstr ""
-#~ "Sono d'accordo. Io resterò qua per preparare la difesa di Delwyn e "
-#~ "Dallben... ma guardate! Non siamo soli. Il loro odore li precede... sauri "
-#~ "in arrivo."
-
-#~ msgid "magical"
-#~ msgstr "magico"
+"stringeva, sarebbero sopravvissuti per vedere il peggio."

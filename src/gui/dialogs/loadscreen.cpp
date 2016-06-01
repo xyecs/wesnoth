@@ -29,6 +29,7 @@
 #include "cursor.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
+#include "preferences.hpp"
 #include "utils/functional.hpp"
 #include <boost/thread.hpp>
 
@@ -71,8 +72,19 @@ tloadscreen::tloadscreen(std::function<void()> f)
 	, worker_()
 	, cursor_setter_()
 	, current_stage_(nullptr)
-	, current_visible_stage_(stages.end())
+	, visible_stages_()
+	, animation_stages_()
+	, current_visible_stage_()
 {
+	for (const auto& pair : stages) {
+		visible_stages_[pair.first] = t_string(pair.second, "wesnoth-lib") + "...";
+	}
+	for (int i = 0; i != 20; ++i) {
+		std::string s(20, ' ');
+		s[i] = '.';
+		animation_stages_.push_back(s);
+	}
+	current_visible_stage_ = visible_stages_.end();
 	current_load = this;
 }
 
@@ -92,7 +104,9 @@ twindow* tloadscreen::build_window(CVideo& video) const
 
 void tloadscreen::pre_show(twindow& window)
 {
-	worker_.reset(new boost::thread(work_));
+	if (work_) {
+		worker_.reset(new boost::thread(work_));
+	}
 	timer_id_ = add_timer(100, std::bind(&tloadscreen::timer_callback, this, std::ref(window)), true);
 	cursor_setter_.reset(new cursor::setter(cursor::WAIT));
 	progress_stage_label_ = &find_widget<tlabel>(&window, "status", false);
@@ -128,8 +142,11 @@ tloadscreen* tloadscreen::current_load = nullptr;
 
 void tloadscreen::timer_callback(twindow& window)
 {
-	if (!worker_ || worker_->timed_join(boost::posix_time::milliseconds(0))) {
+	if (!work_ || !worker_ || worker_->timed_join(boost::posix_time::milliseconds(0))) {
 		window.close();
+	}
+	if (!work_) {
+		return;
 	}
 	const char* stage = current_stage_
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -137,22 +154,19 @@ void tloadscreen::timer_callback(twindow& window)
 #else
 		.load(std::memory_order_acquire);
 #endif
-	if (stage && (current_visible_stage_ == stages.end() || stage != current_visible_stage_->first))
+	if (stage && (current_visible_stage_ == visible_stages_.end() || stage != current_visible_stage_->first))
 	{
-		auto iter = stages.find(stage);
-		if(iter == stages.end()) {
+		auto iter = visible_stages_.find(stage);
+		if(iter == visible_stages_.end()) {
 			WRN_LS << "Stage ID '" << stage << "' missing description." << std::endl;
 			return;
 		}
 		current_visible_stage_ = iter;
-		progress_stage_label_->set_label(t_string(iter->second, "wesnoth-lib") + "...");
+		progress_stage_label_->set_label(iter->second);
 	}
 	++animation_counter_;
 	if (animation_counter_ % 2 == 0) {
-		int animation_state = (animation_counter_ / 2) % 20;
-		std::string s(20, ' ');
-		s[animation_state] = '.';
-		animation_label_->set_label(s);
+		animation_label_->set_label(animation_stages_[(animation_counter_ / 2) % animation_stages_.size()]);
 	}
 }
 
@@ -164,11 +178,16 @@ tloadscreen::~tloadscreen()
 
 void tloadscreen::display(CVideo& video, std::function<void()> f)
 {
+	const bool use_loadingscreen_animation = !preferences::disable_loadingscreen_animation();
 	if (current_load || video.faked()) {
 		f();
 	}
-	else {
+	else if(use_loadingscreen_animation) {
 		tloadscreen(f).show(video);
+	}
+	else {
+		tloadscreen(std::function<void()>()).show(video);
+		f();
 	}
 }
 

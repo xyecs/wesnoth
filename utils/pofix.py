@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 # pofix - perform string fixups on incoming .po files.
 #
@@ -131,6 +131,11 @@ game_stringfixes = {
 ("bigger distraction then they were expecting.", "bigger distraction than they were expecting."),
 ),
 
+"wesnoth-multiplayer" : (
+# 1.13.4+dev
+("Changes the gold worth of the enemy spawns by a certain perentage", "Changes the gold worth of the enemy spawns by a certain percentage"),
+),
+
 }
 
 website_stringfixes = {
@@ -154,9 +159,12 @@ website_mode = 0
 # Speak, if all argument files are newer than this timestamp
 # Try to use UTC here
 # date --utc "+%s  # %c"
-timecheck = 1447845528  # Wed Nov 18 11:18:48 2015
+timecheck = 1462268096  # Tue May  3 09:34:56 2016
 
-import os, sys, time, stat, re, argparse
+import os, sys, time, stat, re, argparse, glob, io
+if sys.version_info < (3, 0):
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 try:
     from multiprocessing import Pool, cpu_count
     def parallel_map(*args, **kw):
@@ -167,7 +175,7 @@ except ImportError:
     parallel_map = map
 
 def process_file(path):
-    before = open(path, "r").read()
+    before = io.open(path, "r", encoding="utf-8").read()
     decommented = re.sub("#.*", "", before)
     lines = before.split('\n')
     if website_mode:
@@ -201,7 +209,7 @@ def process_file(path):
         # Save a backup
         os.rename(path, path + "-bak")
         # Write out transformed version
-        ofp = open(path, "w")
+        ofp = io.open(path, "w", encoding="utf-8")
         ofp.write(after)
         ofp.close()
         return 1
@@ -221,7 +229,8 @@ if __name__ == '__main__':
     modified = 0
     pocount = 0
     files = []
-    for path in args.paths:
+    for arg in args.paths:
+      for path in glob.glob(arg):
         if not path.endswith(".po") and not path.endswith(".pot") and not path.endswith(".cfg") and not path.endswith(".html"):
             continue
         pocount += 1

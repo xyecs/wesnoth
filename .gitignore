@@ -17,24 +17,13 @@ cmake_install.cmake
 CPack*Config.cmake
 uninstall.cmake
 CMakeCache.txt
+install_manifest.txt
 
 # scons
 .scons-option-cache
 *sconsign.dblite
 .sconf_temp
 buildlog.txt
-
-# win32/MSVC:
-ALL_BUILD.vcproj
-INSTALL.vcproj
-PACKAGE.vcproj
-ZERO_CHECK.vcproj
-uninstall.vcproj
-projectfiles/VC*/*.user
-projectfiles/VC[12]*
-src/**/*.vcproj
-/WindowsTimeout.ilk
-/WindowsTimeout.pdb
 
 # XCode
 projectfiles/Xcode/**/build
@@ -54,6 +43,24 @@ projectfiles/**/*.depend
 projectfiles/**/*.layout
 projectfiles/**/*_build_log.html
 projectfiles/**/*objs*
+
+# Visual Studio
+projectfiles/VC*
+!projectfiles/VC12
+projectfiles/VC*/.vs/
+projectfiles/VC*/*.vc.*db
+projectfiles/VC*/*.sdf
+projectfiles/VC*/*.suo
+projectfiles/VC*/*.aps
+ALL_BUILD.vcproj
+INSTALL.vcproj
+PACKAGE.vcproj
+ZERO_CHECK.vcproj
+uninstall.vcproj
+*.vcproj.*.user
+src/**/*.vcproj
+/WindowsTimeout.ilk
+/WindowsTimeout.pdb
 
 # eclipse
 .settings
