@@ -278,14 +278,15 @@ void unit_mover::start(unit_ptr u)
 	// We use update=false because we don't need delay here (no time wasted)
 	// and no screen refresh (will be done by last 3rd draw() and it optimizes
 	// the double blitting done by these invalidations).
-	disp_->draw(false);
-	disp_->draw(false);
+	//disp_->draw(false);
+	//disp_->draw(false);
+	//disp_->set_dirty();
 
 	// The last draw() was still slow, and its initial new_animation_frame() call
 	// is now old, so we do another draw() to get a fresh one
 	// TODO: replace that by a new_animation_frame() before starting anims
 	//       don't forget to change the previous draw(false) to true
-	disp_->draw(true);
+	//disp_->draw(true);
 
 	// extra immobile movement animation for take-off
 	animator_.add_animation(temp_unit_ptr_.get(), "pre_movement", path_[0], path_[1]);
@@ -719,7 +720,8 @@ void unit_recruited(const map_location& loc,const map_location& leader_loc)
 		disp->scroll_to_tile(loc,game_display::ONSCREEN,true,false);
 	}
 
-	disp->draw();
+	//disp->draw();
+	disp->set_dirty();
 	u->set_hidden(false);
 	animator.add_animation(&*u, "recruited", loc, leader_loc);
 	animator.start_animations();

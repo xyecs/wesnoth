@@ -64,7 +64,7 @@ void palette_manager::scroll_down()
 //		const SDL_Rect& rect = gui_.palette_area();
 //		bg_restore(rect);
 		set_dirty();
-		draw();
+		//draw();
 	}
 }
 
@@ -85,7 +85,7 @@ void palette_manager::scroll_up()
 //		const SDL_Rect rect = gui_.palette_area();
 //		bg_restore(rect);
 		set_dirty();
-		draw();
+		//draw();
 	}
 }
 

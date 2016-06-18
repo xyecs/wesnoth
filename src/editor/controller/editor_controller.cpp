@@ -90,7 +90,7 @@ editor_controller::editor_controller(const config &game_config, CVideo& video)
 	join();
 
 	gui().create_buttons();
-	gui().redraw_everything();
+	gui().set_dirty();
     events::raise_draw_event();
 }
 
@@ -720,11 +720,13 @@ bool editor_controller::execute_command(const hotkey::hotkey_command& cmd, int i
 			return true;
 		case HOTKEY_EDITOR_PALETTE_UPSCROLL:
 			toolkit_->get_palette_manager()->scroll_up();
-			gui_->draw(true,false);
+			//gui_->draw(true,false);
+			gui_->set_dirty();
 			return true;
 		case HOTKEY_EDITOR_PALETTE_DOWNSCROLL:
 			toolkit_->get_palette_manager()->scroll_down();
-			gui_->draw(true,false);
+			//gui_->draw(true,false);
+			gui_->set_dirty();
 			return true;
 
 		case HOTKEY_QUIT_GAME:
@@ -1085,7 +1087,7 @@ void editor_controller::preferences()
 	gui_->video().clear_all_help_strings();
 	preferences::show_preferences_dialog(gui_->video(), game_config_);
 
-	gui_->redraw_everything();
+	gui_->set_dirty();
 }
 
 void editor_controller::toggle_grid()

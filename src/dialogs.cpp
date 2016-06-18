@@ -281,12 +281,12 @@ bool animate_unit_advancement(const map_location &loc, size_t choice, const bool
 		animator.wait_for_end();
 		animator.set_all_standing();
 		resources::screen->invalidate(loc);
-		resources::screen->draw();
+		//resources::screen->draw();
 		events::pump();
 	}
 
 	resources::screen->invalidate_all();
-	resources::screen->draw();
+	//resources::screen->draw();
 
 	return true;
 }

@@ -151,7 +151,7 @@ void game_display::new_turn()
 #endif
 
 				invalidate_all();
-				draw();
+				//draw();
 
 				const int cur_ticks = SDL_GetTicks();
 				const int wanted_ticks = starting_ticks + i*frame_time;
@@ -175,7 +175,8 @@ void game_display::new_turn()
 	display::update_tod();
 
 	invalidate_all();
-	draw();
+	set_dirty();
+	//draw();
 }
 
 void game_display::select_hex(map_location hex)

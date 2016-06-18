@@ -147,7 +147,7 @@ void update_rect(const SDL_Rect& rect_value)
 
 	SDL_Rect rect = rect_value;
 
-	surface const fb = nullptr;
+	surface& fb = get_video_surface();
 	if(fb != nullptr) {
 		if(rect.x < 0) {
 			if(rect.x*-1 >= int(rect.w))
@@ -684,9 +684,9 @@ void CVideo::set_fullscreen(bool ison)
 
 		setMode(res.first, res.second, mode);
 
-		if (display::get_singleton()) {
-			display::get_singleton()->redraw_everything();
-		}
+		//if (display::get_singleton()) {
+			//display::get_singleton()->redraw_everything();
+		//}
 	}
 
 	// Change the config value.
@@ -708,9 +708,9 @@ void CVideo::set_resolution(const unsigned width, const unsigned height)
 
 	setMode(width, height, TO_RES);
 
-	if(display::get_singleton()) {
-		display::get_singleton()->redraw_everything();
-	}
+	//if(display::get_singleton()) {
+		//display::get_singleton()->redraw_everything();
+	//}
 
 	// Change the config values.
 	preferences::_set_resolution(std::make_pair(width, height));

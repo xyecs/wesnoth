@@ -74,15 +74,11 @@ public:
 	void draw(CVideo &video);
 	void undraw(CVideo &video);
 #else
-	void draw(surface screen);
-	void undraw(surface screen);
+	void draw(surface& screen);
+	void undraw(surface& screen);
 #endif
 
-#if 0
-	sdl::timage create_image();
-#else
 	surface create_surface();
-#endif
 
 	bool expired() const { return lifetime_ == 0; }
 
@@ -93,11 +89,7 @@ public:
 private:
 
 	int xpos(size_t width) const;
-#if 0
-	sdl::timage img_;
-#else
 	surface surf_, buf_;
-#endif
 	std::string text_;
 	int font_size_;
 	SDL_Color color_, bgcolor_;
@@ -138,8 +130,8 @@ SDL_Rect get_floating_label_rect(int handle);
 void draw_floating_labels(CVideo &video);
 void undraw_floating_labels(CVideo &video);
 #else
-void draw_floating_labels(surface screen);
-void undraw_floating_labels(surface screen);
+void draw_floating_labels(surface& screen);
+void undraw_floating_labels(surface& screen);
 #endif
 
 } // end namespace font

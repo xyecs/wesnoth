@@ -387,7 +387,8 @@ void undo_list::undo()
 		gui.invalidate_unit();
 		gui.invalidate_game_status();
 		gui.redraw_minimap();
-		gui.draw();
+		gui.set_dirty();
+		//gui.draw();
 	}
 	else
 	{
@@ -434,7 +435,8 @@ void undo_list::redo()
 	gui.invalidate_unit();
 	gui.invalidate_game_status();
 	gui.redraw_minimap();
-	gui.draw();
+	gui.set_dirty();
+	//gui.draw();
 }
 
 
@@ -493,14 +495,15 @@ bool undo_list::apply_shroud_changes() const
 
 	// Update the display before pumping events.
 	clearer.invalidate_after_clear();
-	disp.draw();
+	//disp.draw();
+	disp.set_dirty();
 
 	// Fire sighted events
 	if ( clearer.fire_events() ) {
 		// Fix up the display in case WML changed stuff.
 		clear_shroud(side_);
 		disp.invalidate_unit();
-		disp.draw();
+		//disp.draw();
 	}
 
 	return true;

@@ -1403,7 +1403,6 @@ void display::post_draw() {
 	if(video().faked()) {
 			return;
 	}
-
 	surface& frameBuffer = get_video_surface();
 
 	events::raise_volatile_undraw_event();
@@ -1412,7 +1411,6 @@ void display::post_draw() {
 #else
 	font::undraw_floating_labels(frameBuffer);
 #endif
-
 }
 
 void display::clear_fps_label()
@@ -1671,7 +1669,6 @@ void display::draw_text_in_hex(const map_location& loc,
 #endif
 }
 
-//TODO: convert this to use sdl::ttexture
 #ifdef SDL_GPU
 void display::render_image(int x, int y, const display::tdrawing_layer drawing_layer,
 		const map_location& loc, sdl::timage image,
@@ -2285,7 +2282,7 @@ bool display::set_zoom(int amount, bool absolute)
 
 		// Forces a redraw after zooming.
 		// This prevents some graphic glitches from occurring.
-		draw();
+		//draw();
 		return true;
 	} else {
 		return false;
@@ -2339,7 +2336,7 @@ void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_ty
 
 	if(scroll_type == WARP || scroll_type == ONSCREEN_WARP || turbo_speed() > 2.0 || preferences::scroll_speed() > 99) {
 		scroll(xmove,ymove,true);
-		draw();
+		//draw();
 		return;
 	}
 
@@ -2396,7 +2393,7 @@ void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_ty
 		scroll(dx,dy,true);
 		x_old += dx;
 		y_old += dy;
-		draw();
+		//draw();
 	}
 }
 
@@ -2680,6 +2677,7 @@ void display::draw(bool update) {
 }
 
 void display::pre_draw() {
+
 	// Trigger cache rebuild when preference gets changed
 	if (animate_water_ != preferences::animate_water()) {
 		animate_water_ = preferences::animate_water();
@@ -2757,8 +2755,6 @@ void display::draw(bool update,bool force) {
 	font::draw_floating_labels(frameBuffer);
 #endif
 	events::raise_volatile_draw_event();
-
-
 }
 
 map_labels& display::labels()

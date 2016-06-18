@@ -603,6 +603,10 @@ public:
 
 	void draw(bool update);
 
+	void set_dirty(bool state=true) {
+		dirty_=state;
+	}
+
 	/**
 	 * Draws invalidated items.
 	 * If update is true, will also copy the display to the frame buffer.

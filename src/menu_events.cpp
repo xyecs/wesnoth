@@ -467,7 +467,7 @@ void menu_handler::preferences()
 {
 	preferences::show_preferences_dialog(gui_->video(), game_config_);
 	// Needed after changing fullscreen/windowed mode or display resolution
-	gui_->redraw_everything();
+	gui_->set_dirty();
 }
 
 void menu_handler::show_chat_log()
@@ -523,7 +523,8 @@ void menu_handler::recruit(int side_num, const map_location &last_hex)
 {
 	std::vector<const unit_type*> sample_units;
 
-	gui_->draw(); //clear the old menu
+	//gui_->draw(); //clear the old menu
+	gui_->set_dirty();
 
 	std::set<std::string> recruits = actions::get_recruits(side_num, last_hex);
 
@@ -617,7 +618,8 @@ void menu_handler::recall(int side_num, const map_location &last_hex)
 		*recall_list_team = actions::get_recalls(side_num, last_hex);
 	}
 
-	gui_->draw(); //clear the old menu
+	//gui_->draw(); //clear the old menu
+	gui_->set_dirty();
 
 
 	DBG_WB <<"menu_handler::recall: Contents of wb-modified recall list:\n";
@@ -1194,7 +1196,8 @@ void menu_handler::unit_hold_position(mouse_handler &mousehandler, int side_num)
 		gui_->invalidate(mousehandler.get_selected_hex());
 
 		mousehandler.set_current_paths(pathfind::paths());
-		gui_->draw();
+		//gui_->draw();
+		gui_->set_dirty();
 
 		if (un->hold_position()) {
 			mousehandler.cycle_units(false);
@@ -1211,7 +1214,8 @@ void menu_handler::end_unit_turn(mouse_handler &mousehandler, int side_num)
 		gui_->invalidate(mousehandler.get_selected_hex());
 
 		mousehandler.set_current_paths(pathfind::paths());
-		gui_->draw();
+		//gui_->draw();
+		gui_->set_dirty();
 
 		if (un->user_end_turn()) {
 			mousehandler.cycle_units(false);
@@ -2497,7 +2501,7 @@ void console_handler::do_refresh() {
 
 	menu_handler_.gui_->create_buttons();
 
-	menu_handler_.gui_->redraw_everything();
+	menu_handler_.gui_->set_dirty();
 }
 
 void console_handler::do_droid() {

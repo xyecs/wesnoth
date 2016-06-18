@@ -195,7 +195,7 @@ void tcustom_tod::update_tod_display(twindow& window)
 	display_->invalidate_all();
 
 	// redraw tiles
-	display_->draw(false);
+	//display_->draw(false);
 
 	window.invalidate_layout();
 }

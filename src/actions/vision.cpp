@@ -336,11 +336,15 @@ bool shroud_clearer::clear_unit(const map_location &view_loc, team &view_team,
                                 size_t * enemy_count, size_t * friend_count,
                                 move_unit_spectator * spectator, bool instant)
 {
+	//TODO: remove? - Aginor Jun 18 2016
 	// Give animations a chance to progress; see bug #20324.
-	if ( !instant  &&  resources::screen )
-		resources::screen->draw(true);
+	if ( !instant  &&  resources::screen ) {
+		//resources::screen->draw(true);
+		resources::screen->set_dirty();
+	}
 
 	bool cleared_something = false;
+
 	// Dummy variables to make some logic simpler.
 	size_t enemies=0, friends=0;
 	if ( enemy_count == nullptr )
@@ -351,16 +355,25 @@ bool shroud_clearer::clear_unit(const map_location &view_loc, team &view_team,
 	// Make sure the jamming map is up-to-date.
 	if ( view_team_ != &view_team ) {
 		calculate_jamming(&view_team);
+
+		//TODO: remove? - Aginor Jun 18 2016
 		// Give animations a chance to progress; see bug #20324.
-		if ( !instant  &&  resources::screen )
-			resources::screen->draw(true);
+		if ( !instant  &&  resources::screen ) {
+			//resources::screen->draw(true);
+			resources::screen->set_dirty();
+		}
 	}
 
 	// Determine the hexes to clear.
 	pathfind::vision_path sight(costs, slowed, sight_range, view_loc, jamming_);
+
+
+	//TODO: remove? - Aginor Jun 18 2016
 	// Give animations a chance to progress; see bug #20324.
-	if ( !instant  &&  resources::screen )
-		resources::screen->draw(true);
+	if ( !instant  &&  resources::screen ) {
+		resources::screen->set_dirty();
+		//resources::screen->draw(true);
+	}
 
 	// Clear the fog.
 	for (const pathfind::paths::step &dest : sight.destinations) {
