@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE (test_full_options)
 	BOOST_CHECK(co.log->at(4).first  == 2);
 	BOOST_CHECK(co.log->at(4).second == "infofoo");
 	BOOST_CHECK(co.log->at(5).first  == 3         && co.log->at(6).first == 3        && co.log->at(7).first == 3);
-	BOOST_CHECK(co.log->at(5).second == "dbgfoo"  && co.log->at(6)second == "dbgbar" && co.log->at(7).second == "dbg/foo/bar/baz");
+	BOOST_CHECK(co.log->at(5).second == "dbgfoo"  && co.log->at(6).second == "dbgbar" && co.log->at(7).second == "dbg/foo/bar/baz");
 	BOOST_CHECK(co.logdomains && *co.logdomains == "filterfoo");
 	BOOST_CHECK(co.multiplayer);
 	BOOST_CHECK(co.multiplayer_ai_config);
