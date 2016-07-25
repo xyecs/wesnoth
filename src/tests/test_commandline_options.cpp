@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE (test_full_options)
 	BOOST_CHECK(co.multiplayer_label && *co.multiplayer_label == "labelfoo");
 	BOOST_CHECK(co.multiplayer_parm);
 	BOOST_CHECK(std::get<0>(co.multiplayer_parm->at(0)) == 7 && std::get<1>(co.multiplayer_parm->at(0)) == "parmfoo" && std::get<2>(co.multiplayer_parm->at(0)) == "valfoo");
-	BOOST_CHECK(std::get<1>(co.multiplayer_parm->at(1)) == 8 && std::get<1>(co.multiplayer_parm->at(1)) == "parmbar" && std::get<2>(co.multiplayer_parm->at(1)) == "valbar");
+	BOOST_CHECK(std::get<0>(co.multiplayer_parm->at(1)) == 8 && std::get<1>(co.multiplayer_parm->at(1)) == "parmbar" && std::get<2>(co.multiplayer_parm->at(1)) == "valbar");
 	BOOST_CHECK(co.multiplayer_scenario && *co.multiplayer_scenario == "scenfoo");
 	BOOST_CHECK(co.multiplayer_side);
 	BOOST_CHECK(co.multiplayer_side->size() == 2);
